@@ -1,0 +1,41 @@
+{
+  "name": "dotore-admin-02",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.2"
+  },
+  "dependencies": {
+    "@ant-design/colors": "^7.2.1",
+    "@ant-design/icons": "^6.1.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "@mui/x-data-grid": "^8.18.0",
+    "@mui/x-date-pickers": "^8.18.0",
+    "@mui/x-date-pickers-pro": "^8.18.0",
+    "@tinymce/tinymce-react": "^6.3.0",
+    "@types/lodash": "^4.17.20",
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.19",
+    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
+    "quill": "^2.0.3",
+    "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "tinymce": "^8.2.2"
+  }
+}
