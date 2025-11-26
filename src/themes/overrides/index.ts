@@ -1,5 +1,5 @@
 // third-party
-import { merge } from 'lodash-es';
+import { merge } from 'lodash';
 import { Theme } from '@mui/material/styles';
 
 // project imports

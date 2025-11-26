@@ -273,12 +273,6 @@ const Layout = () => {
     }
   }, [location.pathname]);
 
-  const breadcrumbNameMap: { [key: string]: string } = {
-    '/': '문의 목록',
-    '/analysis': '문의 분석',
-  };
-
-  const pathnames = location.pathname.split('/').filter((x) => x);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -458,7 +452,7 @@ const Layout = () => {
                   onMouseEnter={handleInquiryMouseEnter}
                   onMouseLeave={handleInquiryMouseLeave}
                   selected={false}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     minHeight: 48,
                     justifyContent: open ? 'initial' : 'center',
                     px: open ? 2.5 : 1.5,
@@ -474,7 +468,7 @@ const Layout = () => {
                   })}
                 >
                   <ListItemIcon
-                    sx={(theme) => ({
+                    sx={(_theme) => ({
                       minWidth: 28,
                       color: (location.pathname === '/' || location.pathname === '/analysis') ? 'primary.main' : 'text.primary',
                       mr: open ? 3 : 'auto',
@@ -513,7 +507,7 @@ const Layout = () => {
             <Collapse in={inquiryOpen && open} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정 (상위 메뉴 아이콘 너비 고려)
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -536,7 +530,7 @@ const Layout = () => {
                         />
                     </ListItemButton>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -591,7 +585,7 @@ const Layout = () => {
                     navigate('/');
                     handleInquiryPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname === '/' ? 'primary.main' : 'text.primary',
                   })}
@@ -610,7 +604,7 @@ const Layout = () => {
                     navigate('/analysis');
                     handleInquiryPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname === '/analysis' ? 'primary.main' : 'text.primary',
                   })}
@@ -634,7 +628,7 @@ const Layout = () => {
                   onMouseEnter={handleMailMouseEnter}
                   onMouseLeave={handleMailMouseLeave}
                   selected={false}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     minHeight: 48,
                     justifyContent: open ? 'initial' : 'center',
                     px: open ? 2.5 : 1.5,
@@ -650,7 +644,7 @@ const Layout = () => {
                   })}
                 >
                   <ListItemIcon
-                    sx={(theme) => ({
+                    sx={(_theme) => ({
                       minWidth: 28,
                       color: (location.pathname.startsWith('/auto-mail') || location.pathname.startsWith('/manual-mail') || location.pathname === '/mail-group' || location.pathname === '/mail-history') ? 'primary.main' : 'text.primary',
                       mr: open ? 3 : 'auto',
@@ -689,7 +683,7 @@ const Layout = () => {
             <Collapse in={mailOpen && open} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정 (상위 메뉴 아이콘 너비 고려)
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -712,7 +706,7 @@ const Layout = () => {
                         />
                     </ListItemButton>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -735,7 +729,7 @@ const Layout = () => {
                         />
                     </ListItemButton>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -758,7 +752,7 @@ const Layout = () => {
                         />
                     </ListItemButton>
                     <ListItemButton
-                        sx={(theme) => ({
+                        sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
                           '&:hover': { bgcolor: 'primary.lighter' },
                           '&.Mui-selected': {
@@ -813,7 +807,7 @@ const Layout = () => {
                     navigate('/auto-mail');
                     handleMailPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname.startsWith('/auto-mail') ? 'primary.main' : 'text.primary',
                   })}
@@ -832,7 +826,7 @@ const Layout = () => {
                     navigate('/manual-mail');
                     handleMailPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname.startsWith('/manual-mail') ? 'primary.main' : 'text.primary',
                   })}
@@ -851,7 +845,7 @@ const Layout = () => {
                     navigate('/mail-group');
                     handleMailPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname === '/mail-group' ? 'primary.main' : 'text.primary',
                   })}
@@ -870,7 +864,7 @@ const Layout = () => {
                     navigate('/mail-history');
                     handleMailPopoverLeave();
                   }}
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     '&:hover': { bgcolor: 'transparent' },
                     color: location.pathname === '/mail-history' ? 'primary.main' : 'text.primary',
                   })}
@@ -892,7 +886,7 @@ const Layout = () => {
             <Box sx={{ position: 'relative' }}>
               <ListItemButton
                 onClick={handleLogout}
-                sx={(theme) => ({
+                    sx={(_theme) => ({
                   minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: open ? 2.5 : 1.5,
@@ -906,7 +900,7 @@ const Layout = () => {
                 })}
               >
                 <ListItemIcon
-                  sx={(theme) => ({
+                  sx={(_theme) => ({
                     minWidth: 28,
                     color: 'text.primary',
                     mr: open ? 3 : 'auto',

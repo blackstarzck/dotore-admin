@@ -53,7 +53,7 @@ const AutoMailPage = () => {
   >([]);
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
-  const [testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
+  const [_testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [newTemplateDialogOpen, setNewTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');

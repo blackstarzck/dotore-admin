@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 
 // material-ui
-import { createTheme, StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
+import { createTheme, StyledEngineProvider, ThemeProvider, Direction } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 // project imports
@@ -35,7 +35,7 @@ export default function ThemeCustomization({ children }: ThemeCustomizationProps
           xl: 1440
         }
       },
-      direction: 'ltr',
+      direction: 'ltr' as Direction,
       mixins: {
         toolbar: {
           minHeight: 60,

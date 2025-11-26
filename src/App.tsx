@@ -41,14 +41,9 @@ declare module '@mui/material/styles' {
     A200?: string;
     A300?: string;
   }
-  interface Palette {
-    grey: {
-      [key: string | number]: string;
-    };
-  }
   interface Theme {
     vars: {
-      palette: Palette;
+      palette: import('@mui/material/styles').Palette;
       customShadows: {
         [key: string]: string;
       };

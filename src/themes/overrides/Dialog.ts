@@ -2,7 +2,7 @@ import { Theme } from '@mui/material/styles';
 
 // ==============================|| OVERRIDES - DIALOG ||============================== //
 
-export default function Dialog(theme: Theme) {
+export default function Dialog(_theme: Theme) {
   return {
     MuiDialog: {
       styleOverrides: {

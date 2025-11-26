@@ -30,9 +30,9 @@ function buildGrey() {
 
 // ==============================|| DEFAULT THEME - PALETTE ||============================== //
 
-export function buildPalette(presetColor: string = 'default') {
+export function buildPalette(_presetColor: string = 'default') {
   const lightColors = { ...presetPalettes, grey: buildGrey() };
-  const lightPaletteColor = ThemeOption(lightColors, presetColor);
+  const lightPaletteColor = ThemeOption(lightColors);
 
   const commonColor = { common: { black: '#000', white: '#fff' } };
 
@@ -40,7 +40,7 @@ export function buildPalette(presetColor: string = 'default') {
   const extendedCommon = extendPaletteWithChannels(commonColor);
 
   // Dark palette
-  const darkPaletteColor = ThemeOption(lightColors, presetColor);
+  const darkPaletteColor = ThemeOption(lightColors);
   const extendedDark = extendPaletteWithChannels(darkPaletteColor);
 
   return {

@@ -1,5 +1,3 @@
-import { UserType } from '../types/inquiry';
-
 export interface SendGroup {
   id: string;
   name: string;

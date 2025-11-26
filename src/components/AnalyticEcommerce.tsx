@@ -39,7 +39,7 @@ export default function AnalyticEcommerce({
   count,
   percentage,
   isLoss,
-  extra,
+  extra: _extra,
   chartData,
   chartColor,
   fullHeight = false,

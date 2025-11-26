@@ -39,27 +39,27 @@ import { mockInquiries } from '../data/mockData';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { getInquiries, saveInquiries } from '../utils/storage';
 
-// 커스터마이징된 Tooltip 컴포넌트
-const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} disableInteractive={false} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.popper}`]: {
-    zIndex: 1100, // GNB(z-index: 1200) 아래에 표시되도록 설정
-  },
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: '#f5f5f9',
-    color: 'rgba(0, 0, 0, 0.87)',
-    maxWidth: 400,
-    fontSize: theme.typography.pxToRem(12),
-    border: '1px solid #dadde9',
-    padding: theme.spacing(1.5),
-    pointerEvents: 'auto',
-    userSelect: 'text',
-    WebkitUserSelect: 'text',
-    MozUserSelect: 'text',
-    msUserSelect: 'text',
-  },
-}));
+// 커스터마이징된 Tooltip 컴포넌트 (현재 사용되지 않음)
+// const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
+//   <Tooltip {...props} classes={{ popper: className }} disableInteractive={false} />
+// ))(({ theme }) => ({
+//   [`& .${tooltipClasses.popper}`]: {
+//     zIndex: 1100, // GNB(z-index: 1200) 아래에 표시되도록 설정
+//   },
+//   [`& .${tooltipClasses.tooltip}`]: {
+//     backgroundColor: '#f5f5f9',
+//     color: 'rgba(0, 0, 0, 0.87)',
+//     maxWidth: 400,
+//     fontSize: theme.typography.pxToRem(12),
+//     border: '1px solid #dadde9',
+//     padding: theme.spacing(1.5),
+//     pointerEvents: 'auto',
+//     userSelect: 'text',
+//     WebkitUserSelect: 'text',
+//     MozUserSelect: 'text',
+//     msUserSelect: 'text',
+//   },
+// }));
 
 // 경고 느낌의 Tooltip 컴포넌트 (미답변 셀용)
 const WarningTooltip = styled(({ className, ...props }: TooltipProps) => (

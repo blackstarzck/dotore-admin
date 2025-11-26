@@ -1837,15 +1837,15 @@ const InquiryAnalysisPage = () => {
                 // 통일된 색상 팔레트 생성 (모든 필터에 동일한 색상 사용)
                 const unifiedBaseColor = theme.palette.primary.main;
 
-                const getCategoryColors = useMemo(() => {
-                  const categories = Object.values(InquiryCategory);
-                  const tones = generateColorTones(unifiedBaseColor, categories.length);
-                  const colorMap: Record<InquiryCategory, string> = {} as Record<InquiryCategory, string>;
-                  categories.forEach((category, index) => {
-                    colorMap[category] = tones[index];
-                  });
-                  return colorMap;
-                }, [unifiedBaseColor]);
+                // const getCategoryColors = useMemo(() => {
+                //   const categories = Object.values(InquiryCategory);
+                //   const tones = generateColorTones(unifiedBaseColor, categories.length);
+                //   const colorMap: Record<InquiryCategory, string> = {} as Record<InquiryCategory, string>;
+                //   categories.forEach((category, index) => {
+                //     colorMap[category] = tones[index];
+                //   });
+                //   return colorMap;
+                // }, [unifiedBaseColor]);
 
                 const getUserTypeColors = useMemo(() => {
                   const userTypes = Object.values(UserType);
