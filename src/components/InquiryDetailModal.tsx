@@ -16,7 +16,9 @@ import {
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
+import { getCommonText } from '../utils/pageTexts';
 
 interface InquiryDetailModalProps {
   open: boolean;
@@ -87,6 +89,7 @@ const InquiryDetailModal = ({
   onAnswerSubmit,
   onAnswerSubmitSuccess,
 }: InquiryDetailModalProps) => {
+  const { language } = useLanguage();
   const [answer, setAnswer] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
   const quillInstance = useRef<Quill | null>(null);
@@ -281,7 +284,7 @@ const InquiryDetailModal = ({
                     <Typography variant="body2" color="text.secondary">
                         {inquiry.user_email}
                     </Typography>
-                    <Tooltip title="이메일 복사">
+                    <Tooltip title={getCommonText('copyEmail', language)}>
                         <IconButton
                             size="small"
                             onClick={() => handleCopyEmail(inquiry.user_email)}

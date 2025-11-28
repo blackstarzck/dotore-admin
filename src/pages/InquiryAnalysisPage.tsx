@@ -36,11 +36,13 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, Bubble, Doughnut } from 'react-chartjs-2';
 import AnalyticEcommerce from '../components/AnalyticEcommerce';
+import { useLanguage } from '../context/LanguageContext';
 import MainCard from '../components/MainCard';
 import { mockInquiries } from '../data/mockData';
 import { InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { generateColorTones } from '../utils/colorUtils';
 import { getInquiries } from '../utils/storage';
+import { getPageText, getCommonText } from '../utils/pageTexts';
 
 ChartJS.register(
   CategoryScale,
@@ -265,6 +267,7 @@ const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: extern
 // ==============================|| INQUIRY ANALYSIS PAGE ||============================== //
 
 const InquiryAnalysisPage = () => {
+  const { language } = useLanguage();
   const theme = useTheme();
   const trigger = useScrollTrigger({
     disableHysteresis: true,
@@ -1479,7 +1482,7 @@ const InquiryAnalysisPage = () => {
         {/* row 1 */}
         <Grid sx={{ mb: -2.25 }} size={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h5">문의 분석</Typography>
+            <Typography variant="h5">{getPageText('inquiryAnalysis', language).title}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Info sx={{ fontSize: 16, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary">
@@ -1568,7 +1571,7 @@ const InquiryAnalysisPage = () => {
                     <MenuItem value="30days">한달</MenuItem>
                   </Select>
                 </FormControl>
-                <Tooltip title="CSV 다운로드">
+                <Tooltip title={getCommonText('csvDownload', language)}>
                   <IconButton
                     size="medium"
                     onClick={handleExportProcessingTimeCSV}
@@ -1730,7 +1733,7 @@ const InquiryAnalysisPage = () => {
                     );
                 })()}
 
-                <Tooltip title="CSV 다운로드">
+                <Tooltip title={getCommonText('csvDownload', language)}>
                   <IconButton
                     size="medium"
                     onClick={handleExportProcessingTimeCSV}

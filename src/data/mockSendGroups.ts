@@ -1,8 +1,12 @@
+import { RuleGroupType } from 'react-querybuilder';
+import { MultilingualContent } from '../types/multilingual';
+
 export interface SendGroup {
   id: string;
-  name: string;
-  description?: string;
+  name: string | MultilingualContent;
+  description?: string | MultilingualContent;
   memberCount: number;
+  query?: RuleGroupType;
   createdAt: string;
   updatedAt: string;
 }

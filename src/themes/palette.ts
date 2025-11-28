@@ -65,15 +65,15 @@ export function buildPalette(_presetColor: string = 'default') {
       ...extendedCommon,
       ...extendedDark,
       text: {
-        primary: extendedDark.grey[100],
-        secondary: extendedDark.grey[300],
-        disabled: extendedDark.grey[400]
+        primary: extendedDark.grey[0], // #ffffff - mantis 스타일: 밝은 텍스트
+        secondary: extendedDark.grey[200], // #f0f0f0 - mantis 스타일: 보조 텍스트
+        disabled: extendedDark.grey[400] // #bfbfbf - mantis 스타일: 비활성 텍스트
       },
-      action: { disabled: extendedDark.grey[600] },
-      divider: extendedDark.grey[700],
+      action: { disabled: extendedDark.grey[600] }, // #8c8c8c
+      divider: extendedDark.grey[700], // #595959 - mantis 스타일: 구분선
       background: {
-        paper: extendedDark.grey[800],
-        default: extendedDark.grey[900]
+        paper: extendedDark.grey[800], // #262626 - mantis 스타일: 카드 배경
+        default: extendedDark.grey[900] // #141414 - mantis 스타일: 기본 배경
       }
     }
   };

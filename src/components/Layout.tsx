@@ -31,6 +31,7 @@ import { useColorMode } from '../context/ColorModeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { autoMailGroups, manualMailGroups } from '../data/mockMailData';
 import { removeAuthToken } from '../utils/storage';
+import { getCommonText } from '../utils/pageTexts';
 
 const drawerWidth = 240;
 
@@ -115,8 +116,8 @@ const Layout = () => {
   const exploreMenuOpen = Boolean(exploreAnchorEl);
   const [languageAnchorEl, setLanguageAnchorEl] = React.useState<null | HTMLElement>(null);
   const languageMenuOpen = Boolean(languageAnchorEl);
-  const [inquiryPopoverAnchor, setInquiryPopoverAnchor] = React.useState<null | HTMLElement>(null);
-  const [mailPopoverAnchor, setMailPopoverAnchor] = React.useState<null | HTMLElement>(null);
+  const [popoverAnchor, setPopoverAnchor] = React.useState<null | HTMLElement>(null);
+  const [activeMenu, setActiveMenu] = React.useState<'inquiry' | 'mail' | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -150,33 +151,36 @@ const Layout = () => {
     }
   };
 
-  const inquiryPopoverTimeoutRef = React.useRef<number | null>(null);
+  const popoverTimeoutRef = React.useRef<number | null>(null);
 
   const handleInquiryMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (!open) {
-      if (inquiryPopoverTimeoutRef.current) {
-        clearTimeout(inquiryPopoverTimeoutRef.current);
-        inquiryPopoverTimeoutRef.current = null;
+      if (popoverTimeoutRef.current) {
+        clearTimeout(popoverTimeoutRef.current);
+        popoverTimeoutRef.current = null;
       }
-      setInquiryPopoverAnchor(event.currentTarget);
+      setPopoverAnchor(event.currentTarget);
+      setActiveMenu('inquiry');
     }
   };
 
   const handleInquiryMouseLeave = () => {
-    inquiryPopoverTimeoutRef.current = setTimeout(() => {
-      setInquiryPopoverAnchor(null);
+    popoverTimeoutRef.current = setTimeout(() => {
+      setPopoverAnchor(null);
+      setActiveMenu(null);
     }, 100);
   };
 
-  const handleInquiryPopoverEnter = () => {
-    if (inquiryPopoverTimeoutRef.current) {
-      clearTimeout(inquiryPopoverTimeoutRef.current);
-      inquiryPopoverTimeoutRef.current = null;
+  const handlePopoverEnter = () => {
+    if (popoverTimeoutRef.current) {
+      clearTimeout(popoverTimeoutRef.current);
+      popoverTimeoutRef.current = null;
     }
   };
 
-  const handleInquiryPopoverLeave = () => {
-    setInquiryPopoverAnchor(null);
+  const handlePopoverLeave = () => {
+    setPopoverAnchor(null);
+    setActiveMenu(null);
   };
 
   const handleMailClick = () => {
@@ -188,33 +192,22 @@ const Layout = () => {
     }
   };
 
-  const mailPopoverTimeoutRef = React.useRef<number | null>(null);
-
   const handleMailMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (!open) {
-      if (mailPopoverTimeoutRef.current) {
-        clearTimeout(mailPopoverTimeoutRef.current);
-        mailPopoverTimeoutRef.current = null;
+      if (popoverTimeoutRef.current) {
+        clearTimeout(popoverTimeoutRef.current);
+        popoverTimeoutRef.current = null;
       }
-      setMailPopoverAnchor(event.currentTarget);
+      setPopoverAnchor(event.currentTarget);
+      setActiveMenu('mail');
     }
   };
 
   const handleMailMouseLeave = () => {
-    mailPopoverTimeoutRef.current = setTimeout(() => {
-      setMailPopoverAnchor(null);
+    popoverTimeoutRef.current = setTimeout(() => {
+      setPopoverAnchor(null);
+      setActiveMenu(null);
     }, 100);
-  };
-
-  const handleMailPopoverEnter = () => {
-    if (mailPopoverTimeoutRef.current) {
-      clearTimeout(mailPopoverTimeoutRef.current);
-      mailPopoverTimeoutRef.current = null;
-    }
-  };
-
-  const handleMailPopoverLeave = () => {
-    setMailPopoverAnchor(null);
   };
 
   const handleFullScreen = () => {
@@ -257,11 +250,8 @@ const Layout = () => {
 
   React.useEffect(() => {
     return () => {
-      if (inquiryPopoverTimeoutRef.current) {
-        clearTimeout(inquiryPopoverTimeoutRef.current);
-      }
-      if (mailPopoverTimeoutRef.current) {
-        clearTimeout(mailPopoverTimeoutRef.current);
+      if (popoverTimeoutRef.current) {
+        clearTimeout(popoverTimeoutRef.current);
       }
     };
   }, []);
@@ -298,7 +288,7 @@ const Layout = () => {
           {/* 우측 아이콘 버튼 그룹 */}
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
             {/* 언어 선택 메뉴 */}
-            <Tooltip title="언어 선택">
+            <Tooltip title={getCommonText('languageSelect', language)}>
               <IconButton
                 color="inherit"
                 onClick={handleLanguageClick}
@@ -519,7 +509,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname === '/'}
-                        onClick={() => navigate('/')}
+                        onClick={() => {
+                          if (location.pathname !== '/') {
+                            navigate('/');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -542,7 +536,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname === '/analysis'}
-                        onClick={() => navigate('/analysis')}
+                        onClick={() => {
+                          if (location.pathname !== '/analysis') {
+                            navigate('/analysis');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -555,70 +553,6 @@ const Layout = () => {
                 </List>
             </Collapse>
 
-            {/* 접혀있을 때 문의 관리 하위 메뉴 Popover */}
-            <Popover
-              open={Boolean(inquiryPopoverAnchor)}
-              anchorEl={inquiryPopoverAnchor}
-              onClose={handleInquiryPopoverLeave}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-              }}
-              disableRestoreFocus
-              onMouseEnter={handleInquiryPopoverEnter}
-              onMouseLeave={handleInquiryPopoverLeave}
-              sx={{
-                pointerEvents: 'none',
-                '& .MuiPopover-paper': {
-                  pointerEvents: 'auto',
-                },
-              }}
-            >
-              <List sx={{ py: 0, minWidth: 160 }}>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/');
-                    handleInquiryPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname === '/' ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname === '/' ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.inquiry.list')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/analysis');
-                    handleInquiryPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname === '/analysis' ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname === '/analysis' ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.inquiry.analysis')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-              </List>
-            </Popover>
 
             {/* 메일 관리 (상위 메뉴) */}
             <ListItem disablePadding sx={{ display: 'block' }}>
@@ -695,7 +629,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname.startsWith('/auto-mail')}
-                        onClick={() => navigate('/auto-mail')}
+                        onClick={() => {
+                          if (location.pathname !== '/auto-mail') {
+                            navigate('/auto-mail');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -718,7 +656,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname.startsWith('/manual-mail')}
-                        onClick={() => navigate('/manual-mail')}
+                        onClick={() => {
+                          if (location.pathname !== '/manual-mail') {
+                            navigate('/manual-mail');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -741,7 +683,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname === '/mail-group'}
-                        onClick={() => navigate('/mail-group')}
+                        onClick={() => {
+                          if (location.pathname !== '/mail-group') {
+                            navigate('/mail-group');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -764,7 +710,11 @@ const Layout = () => {
                           }
                         })}
                         selected={location.pathname === '/mail-history'}
-                        onClick={() => navigate('/mail-history')}
+                        onClick={() => {
+                          if (location.pathname !== '/mail-history') {
+                            navigate('/mail-history');
+                          }
+                        }}
                     >
                         <ListItemText
                           primary={
@@ -777,11 +727,11 @@ const Layout = () => {
                 </List>
             </Collapse>
 
-            {/* 접혀있을 때 메일 관리 하위 메뉴 Popover */}
+            {/* 접혀있을 때 하위 메뉴 Popover (공유) */}
             <Popover
-              open={Boolean(mailPopoverAnchor)}
-              anchorEl={mailPopoverAnchor}
-              onClose={handleMailPopoverLeave}
+              open={Boolean(popoverAnchor) && activeMenu !== null}
+              anchorEl={popoverAnchor}
+              onClose={handlePopoverLeave}
               anchorOrigin={{
                 vertical: 'top',
                 horizontal: 'right',
@@ -791,8 +741,10 @@ const Layout = () => {
                 horizontal: 'left',
               }}
               disableRestoreFocus
-              onMouseEnter={handleMailPopoverEnter}
-              onMouseLeave={handleMailPopoverLeave}
+              disableAutoFocus
+              disableEnforceFocus
+              onMouseEnter={handlePopoverEnter}
+              onMouseLeave={handlePopoverLeave}
               sx={{
                 pointerEvents: 'none',
                 '& .MuiPopover-paper': {
@@ -801,82 +753,146 @@ const Layout = () => {
               }}
             >
               <List sx={{ py: 0, minWidth: 160 }}>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/auto-mail');
-                    handleMailPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname.startsWith('/auto-mail') ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname.startsWith('/auto-mail') ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.mail.auto')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/manual-mail');
-                    handleMailPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname.startsWith('/manual-mail') ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname.startsWith('/manual-mail') ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.mail.manual')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/mail-group');
-                    handleMailPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname === '/mail-group' ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname === '/mail-group' ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.mail.group')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  selected={false}
-                  onClick={() => {
-                    navigate('/mail-history');
-                    handleMailPopoverLeave();
-                  }}
-                  sx={(_theme) => ({
-                    '&:hover': { bgcolor: 'transparent' },
-                    color: location.pathname === '/mail-history' ? 'primary.main' : 'text.primary',
-                  })}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6" sx={{ color: location.pathname === '/mail-history' ? 'primary.main' : 'text.primary' }}>
-                        {t('menu.mail.history')}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
+                {activeMenu === 'inquiry' && (
+                  <>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/') {
+                          navigate('/');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname === '/' ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname === '/' ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.inquiry.list')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/analysis') {
+                          navigate('/analysis');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname === '/analysis' ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname === '/analysis' ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.inquiry.analysis')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                  </>
+                )}
+                {activeMenu === 'mail' && (
+                  <>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/auto-mail') {
+                          navigate('/auto-mail');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname.startsWith('/auto-mail') ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname.startsWith('/auto-mail') ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.mail.auto')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/manual-mail') {
+                          navigate('/manual-mail');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname.startsWith('/manual-mail') ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname.startsWith('/manual-mail') ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.mail.manual')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/mail-group') {
+                          navigate('/mail-group');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname === '/mail-group' ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname === '/mail-group' ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.mail.group')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      selected={false}
+                      tabIndex={-1}
+                      onClick={() => {
+                        if (location.pathname !== '/mail-history') {
+                          navigate('/mail-history');
+                        }
+                        handlePopoverLeave();
+                      }}
+                      sx={(_theme) => ({
+                        '&:hover': { bgcolor: 'transparent' },
+                        color: location.pathname === '/mail-history' ? 'primary.main' : 'text.primary',
+                      })}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6" sx={{ color: location.pathname === '/mail-history' ? 'primary.main' : 'text.primary' }}>
+                            {t('menu.mail.history')}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                  </>
+                )}
               </List>
             </Popover>
         </List>

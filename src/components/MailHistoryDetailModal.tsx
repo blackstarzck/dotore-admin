@@ -330,8 +330,8 @@ const MailHistoryDetailModal = ({ open, history, onClose }: MailHistoryDetailMod
                           </TableCell>
                         </TableRow>
                       ) : (
-                        paginatedRecipients.map((recipient) => (
-                        <TableRow key={recipient.id} hover>
+                        paginatedRecipients.map((recipient, index) => (
+                        <TableRow key={`${history.id}-${recipient.id}-${index}`} hover>
                           <TableCell sx={{ whiteSpace: 'nowrap' }}>
                             <Typography variant="body2" noWrap>
                               {recipient.userId}

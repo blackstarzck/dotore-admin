@@ -35,9 +35,11 @@ import type { TooltipProps } from '@mui/material/Tooltip';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import InquiryDetailModal from '../components/InquiryDetailModal';
+import { useLanguage } from '../context/LanguageContext';
 import { mockInquiries } from '../data/mockData';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { getInquiries, saveInquiries } from '../utils/storage';
+import { getPageText, getCommonText } from '../utils/pageTexts';
 
 // 커스터마이징된 Tooltip 컴포넌트 (현재 사용되지 않음)
 // const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
@@ -85,6 +87,8 @@ const WarningTooltip = styled(({ className, ...props }: TooltipProps) => (
 }));
 
 const InquiryListPage = () => {
+  const { language } = useLanguage();
+
   // 오늘 날짜 문자열 생성
   const getTodayString = () => {
     const today = new Date();
@@ -731,7 +735,7 @@ const InquiryListPage = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        문의 목록
+        {getPageText('inquiryList', language).title}
       </Typography>
 
       <Paper
@@ -759,7 +763,7 @@ const InquiryListPage = () => {
            {/* 왼쪽: 검색 + 상세 버튼 */}
            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
              <TextField
-              placeholder="검색..."
+              placeholder={getCommonText('searchPlaceholder', language)}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -789,13 +793,13 @@ const InquiryListPage = () => {
                           '& .MuiSelect-select': { py: 0 },
                         }}
                       >
-                        <MenuItem value="all">전체</MenuItem>
-                        <MenuItem value="user_id">아이디</MenuItem>
-                        <MenuItem value="user_name">이름</MenuItem>
-                        <MenuItem value="user_nickname">닉네임</MenuItem>
-                        <MenuItem value="user_email">이메일</MenuItem>
-                        <MenuItem value="answerer_id">답변자</MenuItem>
-                        <MenuItem value="content">문의 내용</MenuItem>
+                        <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                        <MenuItem value="user_id">{getCommonText('user_id', language)}</MenuItem>
+                        <MenuItem value="user_name">{getCommonText('user_name', language)}</MenuItem>
+                        <MenuItem value="user_nickname">{getCommonText('user_nickname', language)}</MenuItem>
+                        <MenuItem value="user_email">{getCommonText('userEmail', language)}</MenuItem>
+                        <MenuItem value="answerer_id">{getCommonText('answerer', language)}</MenuItem>
+                        <MenuItem value="content">{getCommonText('content', language)}</MenuItem>
                       </Select>
                     </FormControl>
                   </InputAdornment>
@@ -821,7 +825,7 @@ const InquiryListPage = () => {
                onClick={handleFilterClick}
                sx={{ whiteSpace: 'nowrap', borderColor: 'divider' }}
              >
-               상세
+               {getCommonText('detail', language)}
              </Button>
            </Box>
 
@@ -859,15 +863,15 @@ const InquiryListPage = () => {
           }}
         >
           <Box sx={{ p: 3, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 2 }}>
-             <Typography variant="subtitle1" fontWeight="bold">상세 검색</Typography>
+             <Typography variant="subtitle1" fontWeight="bold">{getCommonText('detailSearch', language)}</Typography>
             <FormControl size="small" fullWidth>
-              <InputLabel>카테고리</InputLabel>
+              <InputLabel>{getCommonText('category', language)}</InputLabel>
               <Select
                 value={categoryFilter}
-                label="카테고리"
+                label={getCommonText('category', language)}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
-                <MenuItem value="all">전체</MenuItem>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
                 {Object.values(InquiryCategory).map((cat) => (
                   <MenuItem key={cat} value={cat}>
                     {getCategoryLabel(cat)}
@@ -877,13 +881,13 @@ const InquiryListPage = () => {
             </FormControl>
 
             <FormControl size="small" fullWidth>
-              <InputLabel>작성자 유형</InputLabel>
+              <InputLabel>{getCommonText('userType', language)}</InputLabel>
               <Select
                 value={userTypeFilter}
-                label="작성자 유형"
+                label={getCommonText('userType', language)}
                 onChange={(e) => setUserTypeFilter(e.target.value)}
               >
-                <MenuItem value="all">전체</MenuItem>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
                 {Object.values(UserType).map((type) => (
                   <MenuItem key={type} value={type}>
                     {getUserTypeLabel(type)}
@@ -894,13 +898,13 @@ const InquiryListPage = () => {
 
             {/* 국적 필터 추가 */}
             <FormControl size="small" fullWidth>
-              <InputLabel>국적</InputLabel>
+              <InputLabel>{getCommonText('country', language)}</InputLabel>
               <Select
                 value={countryFilter}
-                label="국적"
+                label={getCommonText('country', language)}
                 onChange={(e) => setCountryFilter(e.target.value)}
               >
-                <MenuItem value="all">전체</MenuItem>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
                 {countries.map((country) => (
                   <MenuItem key={country} value={country}>
                     {getCountryLabel(country)}
@@ -910,16 +914,16 @@ const InquiryListPage = () => {
             </FormControl>
 
             <FormControl size="small" fullWidth>
-              <InputLabel>기간</InputLabel>
+              <InputLabel>{getCommonText('period', language)}</InputLabel>
               <Select
                 value={dateFilter}
-                label="기간"
+                label={getCommonText('period', language)}
                 onChange={handleDateFilterChange}
               >
-                <MenuItem value="all">전체</MenuItem>
-                <MenuItem value="today">오늘</MenuItem>
-                <MenuItem value="week">최근 7일</MenuItem>
-                <MenuItem value="month">최근 30일</MenuItem>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                <MenuItem value="today">{getCommonText('today', language)}</MenuItem>
+                <MenuItem value="week">{getCommonText('week', language)}</MenuItem>
+                <MenuItem value="month">{getCommonText('month', language)}</MenuItem>
               </Select>
             </FormControl>
 
@@ -934,7 +938,7 @@ const InquiryListPage = () => {
                 }}
                 sx={{ width: '100%' }}
                 InputLabelProps={{ shrink: true }}
-                label="시작일"
+                label={getCommonText('startDate', language)}
               />
               <Typography variant="body2">~</Typography>
               <TextField
@@ -947,7 +951,7 @@ const InquiryListPage = () => {
                 }}
                 sx={{ width: '100%' }}
                 InputLabelProps={{ shrink: true }}
-                label="종료일"
+                label={getCommonText('endDate', language)}
               />
             </Box>
 
@@ -960,7 +964,7 @@ const InquiryListPage = () => {
               onClick={handleResetFilter}
               fullWidth
             >
-              필터 초기화
+              {getCommonText('resetFilter', language)}
             </Button>
           </Box>
         </Popover>
@@ -1059,7 +1063,7 @@ const InquiryListPage = () => {
                     >
                       등록일
                     </TableSortLabel>
-                    <Tooltip title="날짜와 시간은 사용자의 국적 기준입니다." arrow placement="top">
+                    <Tooltip title={getCommonText('dateTimeInfo', language)} arrow placement="top">
                       <Info sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
                     </Tooltip>
                   </Box>
@@ -1133,7 +1137,7 @@ const InquiryListPage = () => {
                         <Typography variant="body2" noWrap>
                           {inquiry.user_email}
                         </Typography>
-                        <Tooltip title="이메일 복사" arrow placement="top">
+                        <Tooltip title={getCommonText('copyEmail', language)} arrow placement="top">
                           <IconButton
                             className="copy-button"
                             size="small"
@@ -1172,7 +1176,7 @@ const InquiryListPage = () => {
                           title={
                             inquiry.attachments && inquiry.attachments.length > 0
                               ? inquiry.attachments.map((att) => att.filename).join(', ')
-                              : inquiry.attachment_filename || '첨부파일'
+                              : inquiry.attachment_filename || getCommonText('attachment', language)
                           }
                           arrow
                         >

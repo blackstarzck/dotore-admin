@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type Language = 'ko' | 'en' | 'vi';
 
@@ -170,12 +170,21 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('language');
-    return (saved as Language) || 'ko';
+    try {
+      const saved = localStorage.getItem('language');
+      return (saved as Language) || 'ko';
+    } catch (error) {
+      console.warn('Failed to access localStorage for language:', error);
+      return 'ko';
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('language', language);
+    try {
+      localStorage.setItem('language', language);
+    } catch (error) {
+      console.warn('Failed to save language to localStorage:', error);
+    }
   }, [language]);
 
   const setLanguage = (lang: Language) => {

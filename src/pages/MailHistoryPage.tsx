@@ -32,6 +32,7 @@ import { useSearchParams } from 'react-router-dom';
 import MailHistoryDetailModal from '../components/MailHistoryDetailModal';
 import { useLanguage } from '../context/LanguageContext';
 import { MailHistory, mockMailHistory } from '../data/mockMailHistory';
+import { getCommonText, getPageText } from '../utils/pageTexts';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -63,21 +64,25 @@ function a11yProps(index: number) {
 }
 
 const MailHistoryPage = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   // localStorage에서 수동 발송 이력 불러오기
   const getManualMailHistory = (): MailHistory[] => {
     try {
       const stored = localStorage.getItem('manual_mail_history');
       return stored ? JSON.parse(stored) : [];
-    } catch {
+    } catch (error) {
+      console.warn('Failed to read manual mail history from localStorage:', error);
       return [];
     }
   };
 
   // 기존 더미데이터와 localStorage의 수동 발송 이력을 병합
-  const manualHistory = getManualMailHistory();
-  const history = [...mockMailHistory, ...manualHistory];
+  // useMemo를 사용하여 컴포넌트 마운트 시 한 번만 실행
+  const history = useMemo(() => {
+    const manualHistory = getManualMailHistory();
+    return [...mockMailHistory, ...manualHistory];
+  }, []);
 
   const [selectedHistory, setSelectedHistory] = useState<MailHistory | null>(null);
   const [openModal, setOpenModal] = useState(false);
@@ -756,7 +761,7 @@ const MailHistoryPage = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        {t('mailHistory.title')}
+        {getPageText('mailHistory', language).title}
       </Typography>
 
       <Paper
@@ -784,7 +789,7 @@ const MailHistoryPage = () => {
           {/* 왼쪽: 검색 */}
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
             <TextField
-              placeholder="검색..."
+              placeholder={getCommonText('searchPlaceholder', language)}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -815,33 +820,33 @@ const MailHistoryPage = () => {
                           '& .MuiSelect-select': { py: 0 },
                         }}
                         renderValue={(value) => {
-                          if (value === 'all') return '전체';
+                          if (value === 'all') return getCommonText('all', language);
                           if (tabValue === 2) {
-                            if (value === 'userId') return '사용자 ID';
-                            if (value === 'userName') return '사용자명';
-                            if (value === 'userEmail') return '이메일';
+                            if (value === 'userId') return getCommonText('userId', language);
+                            if (value === 'userName') return getCommonText('userName', language);
+                            if (value === 'userEmail') return getCommonText('userEmail', language);
                           } else {
-                            if (value === 'templateName') return '템플릿 이름';
-                            if (value === 'groupName') return '그룹 이름';
-                            if (value === 'sentBy') return '발송자';
+                            if (value === 'templateName') return getCommonText('templateName', language);
+                            if (value === 'groupName') return getCommonText('groupName', language);
+                            if (value === 'sentBy') return getCommonText('sentBy', language);
                           }
                           return '';
                         }}
                       >
                         {tabValue === 2 ? (
-                          <>
-                            <MenuItem value="all">전체</MenuItem>
-                            <MenuItem value="userId">사용자 ID</MenuItem>
-                            <MenuItem value="userName">사용자명</MenuItem>
-                            <MenuItem value="userEmail">이메일</MenuItem>
-                          </>
+                          [
+                            <MenuItem key="all" value="all">{getCommonText('all', language)}</MenuItem>,
+                            <MenuItem key="userId" value="userId">{getCommonText('userId', language)}</MenuItem>,
+                            <MenuItem key="userName" value="userName">{getCommonText('userName', language)}</MenuItem>,
+                            <MenuItem key="userEmail" value="userEmail">{getCommonText('userEmail', language)}</MenuItem>,
+                          ]
                         ) : (
-                          <>
-                            <MenuItem value="all">전체</MenuItem>
-                            <MenuItem value="templateName">템플릿 이름</MenuItem>
-                            <MenuItem value="groupName">그룹 이름</MenuItem>
-                            <MenuItem value="sentBy">발송자</MenuItem>
-                          </>
+                          [
+                            <MenuItem key="all" value="all">{getCommonText('all', language)}</MenuItem>,
+                            <MenuItem key="templateName" value="templateName">{getCommonText('templateName', language)}</MenuItem>,
+                            <MenuItem key="groupName" value="groupName">{getCommonText('groupName', language)}</MenuItem>,
+                            <MenuItem key="sentBy" value="sentBy">{getCommonText('sentBy', language)}</MenuItem>,
+                          ]
                         )}
                       </Select>
                     </FormControl>
@@ -868,7 +873,7 @@ const MailHistoryPage = () => {
               onClick={handleFilterClick}
               sx={{ whiteSpace: 'nowrap', borderColor: 'divider' }}
             >
-              상세
+              {getCommonText('detail', language)}
             </Button>
           </Box>
 
@@ -906,13 +911,13 @@ const MailHistoryPage = () => {
         >
           <Box sx={{ p: 3, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold">
-              상세 검색
+              {getCommonText('detailSearch', language)}
             </Typography>
             <FormControl size="small" fullWidth>
-              <InputLabel>유형</InputLabel>
+              <InputLabel>{getCommonText('type', language)}</InputLabel>
               <Select
                 value={typeFilter}
-                label="유형"
+                label={getCommonText('type', language)}
                 onChange={(e) => {
                   setTypeFilter(e.target.value);
                   setAutoPage(0);
@@ -920,17 +925,17 @@ const MailHistoryPage = () => {
                   setRecipientPage(0);
                 }}
               >
-                <MenuItem value="all">전체</MenuItem>
-                <MenuItem value="auto">자동</MenuItem>
-                <MenuItem value="manual">수동</MenuItem>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                <MenuItem value="auto">{getCommonText('auto', language)}</MenuItem>
+                <MenuItem value="manual">{getCommonText('manual', language)}</MenuItem>
               </Select>
             </FormControl>
 
             <FormControl size="small" fullWidth>
-              <InputLabel>템플릿 이름</InputLabel>
+              <InputLabel>{getCommonText('templateName', language)}</InputLabel>
               <Select
                 value={templateNameFilter}
-                label="템플릿 이름"
+                label={getCommonText('templateName', language)}
                 onChange={(e) => {
                   setTemplateNameFilter(e.target.value);
                   setAutoPage(0);
@@ -938,20 +943,20 @@ const MailHistoryPage = () => {
                   setRecipientPage(0);
                 }}
               >
-                <MenuItem value="all">전체</MenuItem>
-                {uniqueTemplateNames.map((name) => (
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                {Array.isArray(uniqueTemplateNames) ? uniqueTemplateNames.map((name) => (
                   <MenuItem key={name} value={name}>
                     {name}
                   </MenuItem>
-                ))}
+                )) : null}
               </Select>
             </FormControl>
 
             <FormControl size="small" fullWidth>
-              <InputLabel>그룹 이름</InputLabel>
+              <InputLabel>{getCommonText('groupName', language)}</InputLabel>
               <Select
                 value={groupNameFilter}
-                label="그룹 이름"
+                label={getCommonText('groupName', language)}
                 onChange={(e) => {
                   setGroupNameFilter(e.target.value);
                   setAutoPage(0);
@@ -959,62 +964,62 @@ const MailHistoryPage = () => {
                   setRecipientPage(0);
                 }}
               >
-                <MenuItem value="all">전체</MenuItem>
-                {uniqueGroupNames.map((name) => (
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                {Array.isArray(uniqueGroupNames) ? uniqueGroupNames.map((name) => (
                   <MenuItem key={name} value={name}>
                     {name}
                   </MenuItem>
-                ))}
+                )) : null}
               </Select>
             </FormControl>
 
             {tabValue !== 0 && (
               <>
                 <FormControl size="small" fullWidth>
-                  <InputLabel>상태</InputLabel>
+                  <InputLabel>{getCommonText('status', language)}</InputLabel>
                   <Select
                     value={statusFilter}
-                    label="상태"
+                    label={getCommonText('status', language)}
                     onChange={(e) => {
                       setStatusFilter(e.target.value);
                       setManualPage(0);
                     }}
                   >
-                    <MenuItem value="all">전체</MenuItem>
-                    <MenuItem value="success">성공</MenuItem>
-                    <MenuItem value="partial">부분 성공</MenuItem>
-                    <MenuItem value="failed">실패</MenuItem>
+                    <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                    <MenuItem value="success">{getCommonText('success', language)}</MenuItem>
+                    <MenuItem value="partial">{getCommonText('partial', language)}</MenuItem>
+                    <MenuItem value="failed">{getCommonText('failed', language)}</MenuItem>
                   </Select>
                 </FormControl>
 
                 <FormControl size="small" fullWidth>
-                  <InputLabel>발송자</InputLabel>
+                  <InputLabel>{getCommonText('sentBy', language)}</InputLabel>
                   <Select
                     value={sentByFilter}
-                    label="발송자"
+                    label={getCommonText('sentBy', language)}
                     onChange={(e) => {
                       setSentByFilter(e.target.value);
                       setManualPage(0);
                     }}
                   >
-                    <MenuItem value="all">전체</MenuItem>
-                    {uniqueSentBys.map((sentBy) => (
+                    <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                    {Array.isArray(uniqueSentBys) ? uniqueSentBys.map((sentBy) => (
                       <MenuItem key={sentBy} value={sentBy}>
                         {sentBy}
                       </MenuItem>
-                    ))}
+                    )) : null}
                   </Select>
                 </FormControl>
               </>
             )}
 
             <FormControl size="small" fullWidth>
-              <InputLabel>기간</InputLabel>
-              <Select value={dateFilter} label="기간" onChange={handleDateFilterChange}>
-                <MenuItem value="all">전체</MenuItem>
-                <MenuItem value="today">오늘</MenuItem>
-                <MenuItem value="week">최근 7일</MenuItem>
-                <MenuItem value="month">최근 30일</MenuItem>
+              <InputLabel>{getCommonText('period', language)}</InputLabel>
+              <Select value={dateFilter} label={getCommonText('period', language)} onChange={handleDateFilterChange}>
+                <MenuItem value="all">{getCommonText('all', language)}</MenuItem>
+                <MenuItem value="today">{getCommonText('today', language)}</MenuItem>
+                <MenuItem value="week">{getCommonText('week', language)}</MenuItem>
+                <MenuItem value="month">{getCommonText('month', language)}</MenuItem>
               </Select>
             </FormControl>
 
@@ -1032,7 +1037,7 @@ const MailHistoryPage = () => {
                 }}
                 sx={{ width: '100%' }}
                 InputLabelProps={{ shrink: true }}
-                label="시작일"
+                label={getCommonText('startDate', language)}
               />
               <Typography variant="body2">~</Typography>
               <TextField
@@ -1048,7 +1053,7 @@ const MailHistoryPage = () => {
                 }}
                 sx={{ width: '100%' }}
                 InputLabelProps={{ shrink: true }}
-                label="종료일"
+                label={getCommonText('endDate', language)}
               />
             </Box>
 
@@ -1061,7 +1066,7 @@ const MailHistoryPage = () => {
               onClick={handleResetFilter}
               fullWidth
             >
-              필터 초기화
+              {getCommonText('resetFilter', language)}
             </Button>
           </Box>
         </Popover>
