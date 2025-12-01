@@ -32,7 +32,6 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useTheme, useColorScheme } from '@mui/material/styles';
 import dayjs, { Dayjs } from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import QueryBuilder, { formatQuery, RuleGroupType } from 'react-querybuilder';
@@ -69,8 +68,6 @@ function CustomTabPanel(props: TabPanelProps) {
 const MailGroupPage = () => {
   const { language } = useLanguage();
   const { showSnackbar } = useSnackbar();
-  const theme = useTheme();
-  const { mode } = useColorScheme();
   const [groups, setGroups] = useState<SendGroup[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -216,7 +216,7 @@ const AutoMailPage = () => {
     setSelectedGroupId('');
     setNewTemplateName({ ko: '', en: '', vi: '' });
     setNewTemplateTitle({ ko: '', en: '', vi: '' });
-    setNewTemplateDescription('');
+    setNewTemplateDescription({ ko: '', en: '', vi: '' });
     setTemplateNameError('');
   };
 

@@ -30,6 +30,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useColorMode } from '../context/ColorModeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { autoMailGroups, manualMailGroups } from '../data/mockMailData';
+import { MultilingualContent } from '../types/multilingual';
 import { removeAuthToken } from '../utils/storage';
 import { getCommonText } from '../utils/pageTexts';
 
@@ -966,7 +967,7 @@ const Layout = () => {
                 const pathParts = location.pathname.split('/').filter(Boolean);
                 const templateId = pathParts.length >= 3 ? pathParts[2] : null;
 
-                let templateName = null;
+                let templateName: MultilingualContent | null = null;
                 if (templateId) {
                   const groups = isAutoMail ? autoMailGroups : manualMailGroups;
                   for (const group of groups) {
@@ -979,6 +980,7 @@ const Layout = () => {
                 }
 
                 if (templateName) {
+                  const templateNameText = typeof templateName === 'string' ? templateName : templateName[language];
                   return [
                     <LinkMaterial key="mail" component={Link} to={isAutoMail ? '/auto-mail' : '/manual-mail'} color="text.secondary" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                       {t('breadcrumb.mail')}
@@ -987,7 +989,7 @@ const Layout = () => {
                       {isAutoMail ? t('breadcrumb.mail.auto') : t('breadcrumb.mail.manual')}
                     </LinkMaterial>,
                     <Typography key="template" color="text.primary" sx={{ fontWeight: 500 }}>
-                      {templateName}
+                      {templateNameText}
                     </Typography>
                   ];
                 } else {
