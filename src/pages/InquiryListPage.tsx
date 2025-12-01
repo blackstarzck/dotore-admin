@@ -30,8 +30,7 @@ import {
   tooltipClasses,
   useScrollTrigger
 } from '@mui/material';
-import { useColorScheme } from '@mui/material/styles';
-import { styled } from '@mui/material/styles';
+import { styled, useColorScheme } from '@mui/material/styles';
 import type { TooltipProps } from '@mui/material/Tooltip';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -39,8 +38,8 @@ import InquiryDetailModal from '../components/InquiryDetailModal';
 import { useLanguage } from '../context/LanguageContext';
 import { mockInquiries } from '../data/mockData';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
+import { getCommonText, getPageText } from '../utils/pageTexts';
 import { getInquiries, saveInquiries } from '../utils/storage';
-import { getPageText, getCommonText } from '../utils/pageTexts';
 
 // 커스터마이징된 Tooltip 컴포넌트 (현재 사용되지 않음)
 // const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
@@ -1226,75 +1225,9 @@ const InquiryListPage = () => {
                           </Typography>
                         </>
                       ) : (
-                        <WarningTooltip
-                          title={
-                            <Box
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              onMouseUp={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                            >
-                              <Typography color="inherit" variant="body2" sx={{ fontWeight: 500 }}>
-                                {(() => {
-                                  const createdDate = new Date(inquiry.created_at);
-                                  const now = new Date();
-                                  const diffTime = now.getTime() - createdDate.getTime();
-                                  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                                  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-                                  const diffMinutes = Math.floor(diffTime / (1000 * 60));
-
-                                  if (diffDays > 0) {
-                                    return `${diffDays}일 동안 미답변`;
-                                  } else if (diffHours > 0) {
-                                    return `${diffHours}시간 동안 미답변`;
-                                  } else {
-                                    return `${diffMinutes}분 동안 미답변`;
-                                  }
-                                })()}
-                              </Typography>
-                            </Box>
-                          }
-                          arrow
-                          placement="right"
-                          open={true}
-                          disableHoverListener
-                          disableFocusListener
-                          disableTouchListener
-                          PopperProps={{
-                            onClick: (e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                            },
-                            onMouseDown: (e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                            },
-                            style: {
-                              zIndex: openModal ? 1200 : 1100, // GNB(z-index: 1200) 아래에 표시되도록 설정
-                            },
-                          }}
-                        >
-                          <Box
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
-                            <Typography variant="body2" color="error" noWrap>
-                              미답변
-                            </Typography>
-                          </Box>
-                        </WarningTooltip>
+                        <Typography variant="body2" color="error" noWrap>
+                          미답변
+                        </Typography>
                       )}
                     </TableCell>
                   </TableRow>

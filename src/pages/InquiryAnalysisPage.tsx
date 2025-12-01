@@ -13,13 +13,15 @@ import {
   MenuItem,
   Select,
   Stack,
-  TextField,
   Tooltip,
   Typography,
   useScrollTrigger,
-  Zoom,
+  Zoom
 } from '@mui/material';
 import { alpha, useColorScheme, useTheme } from '@mui/material/styles';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   ArcElement,
   BarElement,
@@ -33,6 +35,7 @@ import {
   PointElement,
   Title,
 } from 'chart.js';
+import dayjs, { Dayjs } from 'dayjs';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, Bubble, Doughnut } from 'react-chartjs-2';
 import AnalyticEcommerce from '../components/AnalyticEcommerce';
@@ -309,8 +312,8 @@ const InquiryAnalysisPage = () => {
     const day = String(targetDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  const [customStartDate, setCustomStartDate] = useState<string>(getTodayString());
-  const [customEndDate, setCustomEndDate] = useState<string>(getTodayString());
+  const [customStartDate, setCustomStartDate] = useState<Dayjs | null>(dayjs());
+  const [customEndDate, setCustomEndDate] = useState<Dayjs | null>(dayjs());
 
   // 페이지 마운트 시 스크롤을 상단으로 이동
   useEffect(() => {
@@ -327,10 +330,10 @@ const InquiryAnalysisPage = () => {
       setSelectedBarIndex(11); // 최근 12개월 중 마지막 인덱스 (이번 달)
     } else if (stackedBarPeriodFilter === 'custom') {
       // 커스텀 날짜 범위의 경우 마지막 날짜 선택
-      const startDate = new Date(customStartDate);
-      const endDate = new Date(customEndDate);
-      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      setSelectedBarIndex(Math.max(0, days - 1));
+      if (customStartDate && customEndDate) {
+        const days = customEndDate.diff(customStartDate, 'day') + 1;
+        setSelectedBarIndex(Math.max(0, days - 1));
+      }
     }
   }, [stackedBarPeriodFilter, customStartDate, customEndDate]);
 
@@ -823,7 +826,6 @@ const InquiryAnalysisPage = () => {
 
   return (
     <>
-      123
       {/* 문의 현황 분석 섹션 */}
       <Grid container spacing={2} sx={{ mb: 4.5 }}>
         <Grid size={{ xs: 12 }}>
@@ -875,11 +877,10 @@ const InquiryAnalysisPage = () => {
                   >
                     <Button
                       onClick={() => {
-                        const today = new Date();
-                        const startDate = new Date(today);
-                        startDate.setDate(startDate.getDate() - 29); // 최근 30일
-                        setCustomStartDate(getTodayString(startDate));
-                        setCustomEndDate(getTodayString(today));
+                        const today = dayjs();
+                        const startDate = dayjs().subtract(29, 'day'); // 최근 30일
+                        setCustomStartDate(startDate);
+                        setCustomEndDate(today);
                         setStackedBarPeriodFilter('daily');
                       }}
                       sx={{
@@ -892,11 +893,10 @@ const InquiryAnalysisPage = () => {
                     </Button>
                     <Button
                       onClick={() => {
-                        const today = new Date();
-                        const startDate = new Date(today);
-                        startDate.setDate(startDate.getDate() - (startDate.getDay() + 11 * 7)); // 최근 12주 시작일
-                        setCustomStartDate(getTodayString(startDate));
-                        setCustomEndDate(getTodayString(today));
+                        const today = dayjs();
+                        const startDate = dayjs().subtract(11 * 7 + today.day(), 'day'); // 최근 12주 시작일
+                        setCustomStartDate(startDate);
+                        setCustomEndDate(today);
                         setStackedBarPeriodFilter('weekly');
                       }}
                       sx={{
@@ -909,10 +909,10 @@ const InquiryAnalysisPage = () => {
                     </Button>
                     <Button
                       onClick={() => {
-                        const today = new Date();
-                        const startDate = new Date(today.getFullYear(), today.getMonth() - 11, 1); // 최근 12개월 시작일
-                        setCustomStartDate(getTodayString(startDate));
-                        setCustomEndDate(getTodayString(today));
+                        const today = dayjs();
+                        const startDate = dayjs().subtract(11, 'month').startOf('month'); // 최근 12개월 시작일
+                        setCustomStartDate(startDate);
+                        setCustomEndDate(today);
                         setStackedBarPeriodFilter('monthly');
                       }}
                       sx={{
@@ -924,51 +924,59 @@ const InquiryAnalysisPage = () => {
                       월간
                     </Button>
                   </ButtonGroup>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TextField
-                      type="date"
-                      size="small"
-                      value={customStartDate}
-                      onChange={(e) => {
-                        setCustomStartDate(e.target.value);
-                        setStackedBarPeriodFilter('custom');
-                      }}
-                      sx={{
-                        width: 150,
-                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                          filter: mode === 'dark' ? 'invert(1)' : 'none',
-                        },
-                        '& input[type="date"]': {
-                          color: 'text.primary',
-                        },
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                      label="시작일"
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      ~
-                    </Typography>
-                    <TextField
-                      type="date"
-                      size="small"
-                      value={customEndDate}
-                      onChange={(e) => {
-                        setCustomEndDate(e.target.value);
-                        setStackedBarPeriodFilter('custom');
-                      }}
-                      sx={{
-                        width: 150,
-                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                          filter: mode === 'dark' ? 'invert(1)' : 'none',
-                        },
-                        '& input[type="date"]': {
-                          color: 'text.primary',
-                        },
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                      label="종료일"
-                    />
-                  </Box>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <DatePicker
+                        key={`start-date-${mode}`}
+                        value={customStartDate}
+                        onChange={(newValue) => {
+                          setCustomStartDate(newValue);
+                          setStackedBarPeriodFilter('custom');
+                        }}
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: {
+                              width: 150,
+                              '& .MuiInputAdornment-root .MuiIconButton-root': {
+                                color: 'text.secondary',
+                              },
+                            },
+                          },
+                          actionBar: {
+                            actions: ['clear', 'today'],
+                          },
+                        }}
+                        label="시작일"
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        ~
+                      </Typography>
+                      <DatePicker
+                        key={`end-date-${mode}`}
+                        value={customEndDate}
+                        onChange={(newValue) => {
+                          setCustomEndDate(newValue);
+                          setStackedBarPeriodFilter('custom');
+                        }}
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: {
+                              width: 150,
+                              '& .MuiInputAdornment-root .MuiIconButton-root': {
+                                color: 'text.secondary',
+                              },
+                            },
+                          },
+                          actionBar: {
+                            actions: ['clear', 'today'],
+                          },
+                        }}
+                        label="종료일"
+                      />
+                    </Box>
+                  </LocalizationProvider>
                 </Box>
               </Box>
 
@@ -1096,12 +1104,10 @@ const InquiryAnalysisPage = () => {
                       }
                     });
                   }
-                } else if (stackedBarPeriodFilter === 'custom') {
+                } else if (stackedBarPeriodFilter === 'custom' && customStartDate && customEndDate) {
                   // 커스텀 날짜 범위 데이터
-                  const startDate = new Date(customStartDate);
-                  startDate.setHours(0, 0, 0, 0);
-                  const endDate = new Date(customEndDate);
-                  endDate.setHours(23, 59, 59, 999);
+                  const startDate = customStartDate.startOf('day').toDate();
+                  const endDate = customEndDate.endOf('day').toDate();
 
                   // 시작일과 종료일 사이의 모든 날짜 생성
                   const dateArray: Date[] = [];
