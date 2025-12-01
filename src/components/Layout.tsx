@@ -980,7 +980,7 @@ const Layout = () => {
                 }
 
                 if (templateName) {
-                  const templateNameText = typeof templateName === 'string' ? templateName : templateName[language];
+                  const templateNameText: string = typeof templateName === 'string' ? templateName : templateName[language] || '';
                   return [
                     <LinkMaterial key="mail" component={Link} to={isAutoMail ? '/auto-mail' : '/manual-mail'} color="text.secondary" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                       {t('breadcrumb.mail')}

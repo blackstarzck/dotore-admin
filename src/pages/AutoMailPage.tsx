@@ -268,7 +268,7 @@ const AutoMailPage = () => {
         vi: defaultDescription,
       });
     } else if (template.description) {
-      setNewTemplateDescription(template.description);
+      setNewTemplateDescription(template.description as MultilingualContent);
     } else {
       setNewTemplateDescription({ ko: '', en: '', vi: '' });
     }
