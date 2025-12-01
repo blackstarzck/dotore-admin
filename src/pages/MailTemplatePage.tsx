@@ -506,7 +506,7 @@ const MailTemplatePage = () => {
                 )}
                 <Box sx={{ visibility: isEditorReady.ko ? 'visible' : 'hidden' }}>
                   <Editor
-                    apiKey={import.meta.env.VITE_TINYMCE_API_KEY || ''}
+                    apiKey={txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb || ''}
                     onInit={(_evt, editor) => {
                       editorRefs.current.ko = editor;
                       setIsEditorReady((prev) => ({ ...prev, ko: true }));
@@ -693,7 +693,7 @@ const MailTemplatePage = () => {
                 )}
                 <Box sx={{ visibility: isEditorReady.en ? 'visible' : 'hidden' }}>
                   <Editor
-                    apiKey={import.meta.env.VITE_TINYMCE_API_KEY || ''}
+                    apiKey={txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb || ''}
                     onInit={(_evt, editor) => {
                       editorRefs.current.en = editor;
                       setIsEditorReady((prev) => ({ ...prev, en: true }));
@@ -880,7 +880,7 @@ const MailTemplatePage = () => {
                 )}
                 <Box sx={{ visibility: isEditorReady.vi ? 'visible' : 'hidden' }}>
                   <Editor
-                    apiKey={import.meta.env.VITE_TINYMCE_API_KEY || ''}
+                    apiKey={txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb || ''}
                     onInit={(_evt, editor) => {
                       editorRefs.current.vi = editor;
                       setIsEditorReady((prev) => ({ ...prev, vi: true }));
