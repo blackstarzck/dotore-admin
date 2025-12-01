@@ -193,7 +193,38 @@ const MailTemplatePage = () => {
       setContent(defaultContent);
     }
     setIsInitialized(true);
-  }, [template, groupId, templateId, isInitialized]);
+  }, [template, groupId, templateId, isInitialized, language]);
+
+  // initialContent가 변경되면 에디터에 내용 설정
+  useEffect(() => {
+    if (editorRefs.current.ko && isEditorReady.ko && initialContent.ko) {
+      const currentContent = editorRefs.current.ko.getContent();
+      if (currentContent !== initialContent.ko) {
+        editorRefs.current.ko.setContent(initialContent.ko);
+        setContent((prev) => ({ ...prev, ko: initialContent.ko }));
+      }
+    }
+  }, [initialContent.ko, isEditorReady.ko]);
+
+  useEffect(() => {
+    if (editorRefs.current.en && isEditorReady.en && initialContent.en) {
+      const currentContent = editorRefs.current.en.getContent();
+      if (currentContent !== initialContent.en) {
+        editorRefs.current.en.setContent(initialContent.en);
+        setContent((prev) => ({ ...prev, en: initialContent.en }));
+      }
+    }
+  }, [initialContent.en, isEditorReady.en]);
+
+  useEffect(() => {
+    if (editorRefs.current.vi && isEditorReady.vi && initialContent.vi) {
+      const currentContent = editorRefs.current.vi.getContent();
+      if (currentContent !== initialContent.vi) {
+        editorRefs.current.vi.setContent(initialContent.vi);
+        setContent((prev) => ({ ...prev, vi: initialContent.vi }));
+      }
+    }
+  }, [initialContent.vi, isEditorReady.vi]);
 
   // 다국어 제목 검증
   const validateMultilingualTitle = (title: MultilingualContent): boolean => {
@@ -486,7 +517,7 @@ const MailTemplatePage = () => {
                   minHeight: 500,
                 }}
               >
-                {!isEditorReady.ko && (
+                {!isEditorReady.ko && languageTab === 0 && (
                   <Box
                     sx={{
                       position: 'absolute',
@@ -504,14 +535,21 @@ const MailTemplatePage = () => {
                     <CircularProgress />
                   </Box>
                 )}
-                <Box sx={{ visibility: isEditorReady.ko ? 'visible' : 'hidden' }}>
+                <Box sx={{ display: languageTab === 0 ? (isEditorReady.ko ? 'block' : 'none') : 'none' }}>
                   <Editor
+                    key="editor-ko-KR"
                     apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
                     onInit={(_evt, editor) => {
                       editorRefs.current.ko = editor;
                       setIsEditorReady((prev) => ({ ...prev, ko: true }));
-                      const currentContent = editor.getContent();
-                      setContent((prev) => ({ ...prev, ko: currentContent }));
+                      // initialContent가 있으면 에디터에 설정
+                      if (initialContent.ko) {
+                        editor.setContent(initialContent.ko);
+                        setContent((prev) => ({ ...prev, ko: initialContent.ko }));
+                      } else {
+                        const currentContent = editor.getContent();
+                        setContent((prev) => ({ ...prev, ko: currentContent }));
+                      }
                     }}
                     onEditorChange={(_content) => {
                       setContent((prev) => ({ ...prev, ko: _content }));
@@ -520,7 +558,7 @@ const MailTemplatePage = () => {
                     init={{
                       height: 500,
                       menubar: 'file edit view insert format tools table help',
-                      language: 'ko_KR',
+                      language: 'ko-KR',
                       plugins: [
                         'advlist',
                         'autolink',
@@ -673,7 +711,7 @@ const MailTemplatePage = () => {
                   minHeight: 500,
                 }}
               >
-                {!isEditorReady.en && (
+                {!isEditorReady.en && languageTab === 1 && (
                   <Box
                     sx={{
                       position: 'absolute',
@@ -691,14 +729,21 @@ const MailTemplatePage = () => {
                     <CircularProgress />
                   </Box>
                 )}
-                <Box sx={{ visibility: isEditorReady.en ? 'visible' : 'hidden' }}>
+                <Box sx={{ display: languageTab === 1 ? (isEditorReady.en ? 'block' : 'none') : 'none' }}>
                   <Editor
+                    key="editor-en"
                     apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
                     onInit={(_evt, editor) => {
                       editorRefs.current.en = editor;
                       setIsEditorReady((prev) => ({ ...prev, en: true }));
-                      const currentContent = editor.getContent();
-                      setContent((prev) => ({ ...prev, en: currentContent }));
+                      // initialContent가 있으면 에디터에 설정
+                      if (initialContent.en) {
+                        editor.setContent(initialContent.en);
+                        setContent((prev) => ({ ...prev, en: initialContent.en }));
+                      } else {
+                        const currentContent = editor.getContent();
+                        setContent((prev) => ({ ...prev, en: currentContent }));
+                      }
                     }}
                     onEditorChange={(_content) => {
                       setContent((prev) => ({ ...prev, en: _content }));
@@ -860,7 +905,7 @@ const MailTemplatePage = () => {
                   minHeight: 500,
                 }}
               >
-                {!isEditorReady.vi && (
+                {!isEditorReady.vi && languageTab === 2 && (
                   <Box
                     sx={{
                       position: 'absolute',
@@ -878,14 +923,21 @@ const MailTemplatePage = () => {
                     <CircularProgress />
                   </Box>
                 )}
-                <Box sx={{ visibility: isEditorReady.vi ? 'visible' : 'hidden' }}>
+                <Box sx={{ display: languageTab === 2 ? (isEditorReady.vi ? 'block' : 'none') : 'none' }}>
                   <Editor
+                    key="editor-vi"
                     apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
                     onInit={(_evt, editor) => {
                       editorRefs.current.vi = editor;
                       setIsEditorReady((prev) => ({ ...prev, vi: true }));
-                      const currentContent = editor.getContent();
-                      setContent((prev) => ({ ...prev, vi: currentContent }));
+                      // initialContent가 있으면 에디터에 설정
+                      if (initialContent.vi) {
+                        editor.setContent(initialContent.vi);
+                        setContent((prev) => ({ ...prev, vi: initialContent.vi }));
+                      } else {
+                        const currentContent = editor.getContent();
+                        setContent((prev) => ({ ...prev, vi: currentContent }));
+                      }
                     }}
                     onEditorChange={(_content) => {
                       setContent((prev) => ({ ...prev, vi: _content }));

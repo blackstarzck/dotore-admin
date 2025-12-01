@@ -712,7 +712,7 @@ const formatTimeOnly = (dateString: string) => {
 #### Supported Languages
 - **한국어 (Korean)**: `ko` 또는 `ko-KR`
 - **영어 (English)**: `en` 또는 `en-US`
-- **베트남어 (Vietnamese)**: `vi` 또는 `vi-VN`
+- **베트남어 (Vietnamese)**: `vi` 또는 `vi`
 
 #### Multilingual Content Types
 다음과 같은 컨텐츠는 반드시 다국어로 등록해야 합니다:

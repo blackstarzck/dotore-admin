@@ -1,4 +1,4 @@
-import { Add, Clear, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
+import { Add, Clear, DeleteOutlined, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -88,6 +88,8 @@ const ManualMailPage = () => {
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [_testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [newTemplateDialogOpen, setNewTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -366,6 +368,65 @@ const ManualMailPage = () => {
     setTestSendTemplate(null);
   };
 
+  const handleDeleteTemplateClick = (e: React.MouseEvent, template: MailTemplate, groupId: string) => {
+    e.stopPropagation();
+    setTemplateToDelete({ template, groupId });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setTemplateToDelete(null);
+  };
+
+  const handleConfirmDeleteTemplate = () => {
+    if (!templateToDelete) return;
+
+    const { template, groupId } = templateToDelete;
+
+    // 그룹에서 템플릿 제거
+    const updatedGroups = manualMailGroups.map((group) => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          templates: group.templates.filter((t) => t.id !== template.id),
+        };
+      }
+      return group;
+    });
+
+    setManualMailGroups(updatedGroups);
+    saveManualMailGroups(updatedGroups as any);
+
+    // localStorage에 저장된 템플릿도 삭제
+    try {
+      const stored = localStorage.getItem('mail_templates');
+      if (stored) {
+        const templates = JSON.parse(stored) as Array<{ groupId: string; templateId: string }>;
+        const filtered = templates.filter(
+          (t) => !(t.groupId === groupId && t.templateId === String(template.id))
+        );
+        if (filtered.length !== templates.length) {
+          localStorage.setItem('mail_templates', JSON.stringify(filtered));
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to delete template from localStorage:', error);
+    }
+
+    const templateNameText =
+      typeof template.name === 'string' ? template.name : template.name[language] || template.name.ko;
+
+    showSnackbar(
+      getCommonText('templateDeleted', language).replace('{name}', templateNameText),
+      'success',
+      3000,
+    );
+
+    setDeleteDialogOpen(false);
+    setTemplateToDelete(null);
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
@@ -468,6 +529,15 @@ const ManualMailPage = () => {
                                 sx={{ color: 'text.secondary' }}
                               >
                                 <Preview fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={getCommonText('delete', language)}>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleDeleteTemplateClick(e, template, group.id)}
+                                sx={{ color: 'text.secondary' }}
+                              >
+                                <DeleteOutlined fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </Box>
@@ -849,6 +919,33 @@ const ManualMailPage = () => {
           <Button onClick={handleCloseNewTemplate}>{getCommonText('cancel', language)}</Button>
           <Button onClick={handleSaveNewTemplate} variant="contained">
             {editingTemplate ? getCommonText('edit', language) : getCommonText('save', language)}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 템플릿 삭제 다이얼로그 */}
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>
+          <Typography variant="h6" component="div">
+            {getCommonText('delete', language)}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {getCommonText('deleteTemplateConfirm', language).replace(
+              '{name}',
+              templateToDelete?.template
+                ? typeof templateToDelete.template.name === 'string'
+                  ? templateToDelete.template.name
+                  : templateToDelete.template.name[language] || templateToDelete.template.name.ko
+                : '',
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog}>{getCommonText('cancel', language)}</Button>
+          <Button onClick={handleConfirmDeleteTemplate} color="error" variant="contained">
+            {getCommonText('delete', language)}
           </Button>
         </DialogActions>
       </Dialog>

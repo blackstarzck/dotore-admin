@@ -6,6 +6,7 @@ import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import ButtonBase from '@mui/material/ButtonBase';
 import Collapse from '@mui/material/Collapse';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -21,7 +22,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
-import { CSSObject, styled, Theme, useTheme, useColorScheme } from '@mui/material/styles';
+import { CSSObject, styled, Theme, useColorScheme, useTheme } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -31,8 +32,8 @@ import { useColorMode } from '../context/ColorModeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { autoMailGroups, manualMailGroups } from '../data/mockMailData';
 import { MultilingualContent } from '../types/multilingual';
-import { removeAuthToken } from '../utils/storage';
 import { getCommonText } from '../utils/pageTexts';
+import { removeAuthToken } from '../utils/storage';
 
 const drawerWidth = 240;
 
@@ -57,11 +58,12 @@ const closedMixin = (theme: Theme): CSSObject => ({
   },
 });
 
-const DrawerHeader = styled('div')(({ theme }) => ({
+const DrawerHeader = styled('div')<{ open?: boolean }>(({ theme, open }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: theme.spacing(0, 1),
+  justifyContent: open ? 'space-between' : 'center',
+  padding: theme.spacing(open ? 2 : 1),
+  minHeight: 60,
   // necessary for content to be below app bar
   ...theme.mixins.toolbar,
 }));
@@ -277,7 +279,7 @@ const Layout = () => {
             onClick={handleDrawerOpen}
             edge="start"
             sx={{
-              marginRight: 5,
+              marginRight: 2,
               ...(open && { display: 'none' }),
             }}
           >
@@ -429,10 +431,39 @@ const Layout = () => {
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          </IconButton>
+        <DrawerHeader open={open}>
+          <ButtonBase
+            component={Link}
+            to="/"
+            disableRipple
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: open ? 1.5 : 0,
+              flex: 1,
+              justifyContent: open ? 'flex-start' : 'center',
+              '&:hover': {
+                opacity: 0.8,
+              },
+            }}
+            aria-label="Logo"
+          >
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="Logo"
+              sx={{
+                height: open ? 40 : 35,
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </ButtonBase>
+          {open && (
+            <IconButton onClick={handleDrawerClose} size="small">
+              {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          )}
         </DrawerHeader>
         <Divider />
         <List>

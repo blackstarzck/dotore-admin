@@ -171,6 +171,16 @@ export const commonTexts: Record<string, MultilingualContent> = {
     en: 'Loading template...',
     vi: 'Đang tải mẫu...',
   },
+  deleteTemplateConfirm: {
+    ko: '정말로 {name} 템플릿을 삭제하시겠습니까?',
+    en: 'Are you sure you want to delete the {name} template?',
+    vi: 'Bạn có chắc chắn muốn xóa mẫu {name} không?',
+  },
+  templateDeleted: {
+    ko: '템플릿이 삭제되었습니다.',
+    en: 'Template has been deleted.',
+    vi: 'Mẫu đã được xóa.',
+  },
   sendConfirm: {
     ko: '발송 확인',
     en: 'Send Confirmation',

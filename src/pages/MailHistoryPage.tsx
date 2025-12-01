@@ -1,8 +1,11 @@
-import { Clear, Download, FilterList, KeyboardArrowUp, RestartAlt, Search } from '@mui/icons-material';
+import { Clear, Download, FilterList, KeyboardArrowUp, Preview, RestartAlt, Search } from '@mui/icons-material';
 import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Fab,
   FormControl,
   IconButton,
@@ -32,7 +35,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MailHistoryDetailModal from '../components/MailHistoryDetailModal';
 import { useLanguage } from '../context/LanguageContext';
+import { autoMailGroups, manualMailGroups } from '../data/mockMailData';
 import { MailHistory, mockMailHistory } from '../data/mockMailHistory';
+import { MultilingualContent } from '../types/multilingual';
+import { getAutoMailGroups, getManualMailGroups, getTemplate } from '../utils/storage';
 import { getCommonText, getPageText } from '../utils/pageTexts';
 
 interface TabPanelProps {
@@ -88,6 +94,9 @@ const MailHistoryPage = () => {
 
   const [selectedHistory, setSelectedHistory] = useState<MailHistory | null>(null);
   const [openModal, setOpenModal] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTitle, setPreviewTitle] = useState<MultilingualContent | null>(null);
+  const [previewContent, setPreviewContent] = useState<string>('');
   const [tabValue, setTabValue] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchType, setSearchType] = useState<string>('all');
@@ -381,6 +390,123 @@ const MailHistoryPage = () => {
   const handleRowClick = (item: MailHistory) => {
     setSelectedHistory(item);
     setOpenModal(true);
+  };
+
+  // groupName과 templateName으로 그룹과 템플릿 찾기
+  const findTemplateByNames = (groupName: string, templateName: string, type: 'auto' | 'manual') => {
+    const groups = type === 'auto'
+      ? (getAutoMailGroups() || autoMailGroups)
+      : (getManualMailGroups() || manualMailGroups);
+
+    for (const group of groups) {
+      const groupNameText = typeof group.name === 'string' ? group.name : group.name[language] || group.name.ko || '';
+      if (groupNameText === groupName) {
+        for (const template of group.templates) {
+          const templateNameText = typeof template.name === 'string' ? template.name : template.name[language] || template.name.ko || '';
+          if (templateNameText === templateName) {
+            return { group, template };
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const handlePreviewClick = (e: React.MouseEvent, item: MailHistory) => {
+    e.stopPropagation();
+
+    const found = findTemplateByNames(item.groupName, item.templateName, item.type);
+    if (found) {
+      const savedTemplate = getTemplate(found.group.id, String(found.template.id));
+      if (savedTemplate) {
+        setPreviewTitle(savedTemplate.title);
+        const content = typeof savedTemplate.content === 'string'
+          ? savedTemplate.content
+          : savedTemplate.content[language] || savedTemplate.content.ko || '';
+        setPreviewContent(content);
+      } else {
+        // 저장된 템플릿이 없으면 기본 제목 사용
+        const defaultTitle = typeof found.template.title === 'string'
+          ? found.template.title
+          : found.template.title?.[language] || found.template.title?.ko || '';
+        setPreviewTitle({
+          ko: defaultTitle,
+          en: defaultTitle,
+          vi: defaultTitle,
+        });
+        setPreviewContent(`<p>${getCommonText('noSavedTemplate', language)}</p>`);
+      }
+      setPreviewOpen(true);
+    } else {
+      // 템플릿을 찾을 수 없는 경우
+      setPreviewTitle({
+        ko: item.templateName,
+        en: item.templateName,
+        vi: item.templateName,
+      });
+      setPreviewContent(`<p>${getCommonText('templateNotFound', language) || '템플릿을 찾을 수 없습니다.'}</p>`);
+      setPreviewOpen(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setPreviewTitle(null);
+    setPreviewContent('');
+  };
+
+  // templateName만으로 템플릿 찾기 (수신자 탭용)
+  const findTemplateByName = (templateName: string, type: 'auto' | 'manual') => {
+    const groups = type === 'auto'
+      ? (getAutoMailGroups() || autoMailGroups)
+      : (getManualMailGroups() || manualMailGroups);
+
+    for (const group of groups) {
+      for (const template of group.templates) {
+        const templateNameText = typeof template.name === 'string' ? template.name : template.name[language] || template.name.ko || '';
+        if (templateNameText === templateName) {
+          return { group, template };
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleRecipientPreviewClick = (e: React.MouseEvent, recipient: { templateName: string; type: 'auto' | 'manual' }) => {
+    e.stopPropagation();
+
+    const found = findTemplateByName(recipient.templateName, recipient.type);
+    if (found) {
+      const savedTemplate = getTemplate(found.group.id, String(found.template.id));
+      if (savedTemplate) {
+        setPreviewTitle(savedTemplate.title);
+        const content = typeof savedTemplate.content === 'string'
+          ? savedTemplate.content
+          : savedTemplate.content[language] || savedTemplate.content.ko || '';
+        setPreviewContent(content);
+      } else {
+        // 저장된 템플릿이 없으면 기본 제목 사용
+        const defaultTitle = typeof found.template.title === 'string'
+          ? found.template.title
+          : found.template.title?.[language] || found.template.title?.ko || '';
+        setPreviewTitle({
+          ko: defaultTitle,
+          en: defaultTitle,
+          vi: defaultTitle,
+        });
+        setPreviewContent(`<p>${getCommonText('noSavedTemplate', language)}</p>`);
+      }
+      setPreviewOpen(true);
+    } else {
+      // 템플릿을 찾을 수 없는 경우
+      setPreviewTitle({
+        ko: recipient.templateName,
+        en: recipient.templateName,
+        vi: recipient.templateName,
+      });
+      setPreviewContent(`<p>${getCommonText('templateNotFound', language) || '템플릿을 찾을 수 없습니다.'}</p>`);
+      setPreviewOpen(true);
+    }
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -1115,12 +1241,13 @@ const MailHistoryPage = () => {
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     {t('mailHistory.failedCount')}
                   </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>미리보기</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {autoPaginated.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <Search sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
                         <Typography variant="h6" color="text.secondary">
@@ -1161,6 +1288,15 @@ const MailHistoryPage = () => {
                         <Typography variant="body2" noWrap>
                           {item.failedCount.toLocaleString()}명
                         </Typography>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handlePreviewClick(e, item)}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <Preview fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1223,12 +1359,13 @@ const MailHistoryPage = () => {
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.type')}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.sentDate')}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.sentBy')}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>미리보기</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {manualPaginated.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <Search sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
                         <Typography variant="h6" color="text.secondary">
@@ -1286,6 +1423,15 @@ const MailHistoryPage = () => {
                           {item.sentBy}
                         </Typography>
                       </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handlePreviewClick(e, item)}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <Preview fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -1339,12 +1485,13 @@ const MailHistoryPage = () => {
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.templateName')}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.recipientStatus')}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{t('mailHistory.sentDate')}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>미리보기</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {recipientPaginated.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <Search sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
                         <Typography variant="h6" color="text.secondary">
@@ -1396,6 +1543,15 @@ const MailHistoryPage = () => {
                         <Typography variant="body2" noWrap>
                           {formatDateOnly(recipient.sentAt)}
                         </Typography>
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', width: 80 }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleRecipientPreviewClick(e, recipient)}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <Preview fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1463,6 +1619,50 @@ const MailHistoryPage = () => {
             }}
           />
         )}
+
+        {/* 템플릿 미리보기 모달 */}
+        <Dialog
+          open={previewOpen}
+          onClose={handleClosePreview}
+          maxWidth="md"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: 'background.paper',
+              },
+            },
+          }}
+        >
+          <DialogTitle>
+            <Typography variant="h5" fontWeight="bold" component="div">
+              {previewTitle
+                ? typeof previewTitle === 'string'
+                  ? previewTitle
+                  : previewTitle[language] || previewTitle.ko || ''
+                : '템플릿 미리보기'}
+            </Typography>
+          </DialogTitle>
+          <DialogContent>
+            <Box
+              sx={{
+                mt: 2,
+                '& p': {
+                  margin: '0 0 1em 0',
+                },
+                '& ul, & ol': {
+                  margin: '0 0 1em 0',
+                  paddingLeft: '1.5em',
+                },
+                '& img': {
+                  maxWidth: '100%',
+                  height: 'auto',
+                },
+              }}
+              dangerouslySetInnerHTML={{ __html: previewContent }}
+            />
+          </DialogContent>
+        </Dialog>
       </Paper>
     </Box>
   );
