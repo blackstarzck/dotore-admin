@@ -30,6 +30,7 @@ import {
   tooltipClasses,
   useScrollTrigger
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import type { TooltipProps } from '@mui/material/Tooltip';
 import { useEffect, useMemo, useState } from 'react';
@@ -88,6 +89,7 @@ const WarningTooltip = styled(({ className, ...props }: TooltipProps) => (
 
 const InquiryListPage = () => {
   const { language } = useLanguage();
+  const { mode } = useColorScheme();
 
   // 오늘 날짜 문자열 생성
   const getTodayString = () => {
@@ -936,7 +938,15 @@ const InquiryListPage = () => {
                   setStartDate(e.target.value);
                   setDateFilter('');
                 }}
-                sx={{ width: '100%' }}
+                sx={{
+                  width: '100%',
+                  '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                    filter: mode === 'dark' ? 'invert(1)' : 'none',
+                  },
+                  '& input[type="date"]': {
+                    color: 'text.primary',
+                  },
+                }}
                 InputLabelProps={{ shrink: true }}
                 label={getCommonText('startDate', language)}
               />
@@ -949,7 +959,15 @@ const InquiryListPage = () => {
                   setEndDate(e.target.value);
                   setDateFilter('');
                 }}
-                sx={{ width: '100%' }}
+                sx={{
+                  width: '100%',
+                  '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                    filter: mode === 'dark' ? 'invert(1)' : 'none',
+                  },
+                  '& input[type="date"]': {
+                    color: 'text.primary',
+                  },
+                }}
                 InputLabelProps={{ shrink: true }}
                 label={getCommonText('endDate', language)}
               />

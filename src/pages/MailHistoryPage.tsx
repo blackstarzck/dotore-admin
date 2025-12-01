@@ -27,6 +27,7 @@ import {
   useScrollTrigger,
   Zoom,
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MailHistoryDetailModal from '../components/MailHistoryDetailModal';
@@ -65,6 +66,7 @@ function a11yProps(index: number) {
 
 const MailHistoryPage = () => {
   const { language, t } = useLanguage();
+  const { mode } = useColorScheme();
 
   // localStorage에서 수동 발송 이력 불러오기
   const getManualMailHistory = (): MailHistory[] => {
@@ -1035,7 +1037,15 @@ const MailHistoryPage = () => {
                   setManualPage(0);
                   setRecipientPage(0);
                 }}
-                sx={{ width: '100%' }}
+                sx={{
+                  width: '100%',
+                  '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                    filter: mode === 'dark' ? 'invert(1)' : 'none',
+                  },
+                  '& input[type="date"]': {
+                    color: 'text.primary',
+                  },
+                }}
                 InputLabelProps={{ shrink: true }}
                 label={getCommonText('startDate', language)}
               />
@@ -1051,7 +1061,15 @@ const MailHistoryPage = () => {
                   setManualPage(0);
                   setRecipientPage(0);
                 }}
-                sx={{ width: '100%' }}
+                sx={{
+                  width: '100%',
+                  '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                    filter: mode === 'dark' ? 'invert(1)' : 'none',
+                  },
+                  '& input[type="date"]': {
+                    color: 'text.primary',
+                  },
+                }}
                 InputLabelProps={{ shrink: true }}
                 label={getCommonText('endDate', language)}
               />

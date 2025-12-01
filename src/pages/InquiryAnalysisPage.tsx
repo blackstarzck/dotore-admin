@@ -19,7 +19,7 @@ import {
   useScrollTrigger,
   Zoom,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha, useColorScheme, useTheme } from '@mui/material/styles';
 import {
   ArcElement,
   BarElement,
@@ -36,13 +36,13 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, Bubble, Doughnut } from 'react-chartjs-2';
 import AnalyticEcommerce from '../components/AnalyticEcommerce';
-import { useLanguage } from '../context/LanguageContext';
 import MainCard from '../components/MainCard';
+import { useLanguage } from '../context/LanguageContext';
 import { mockInquiries } from '../data/mockData';
 import { InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { generateColorTones } from '../utils/colorUtils';
+import { getCommonText, getPageText } from '../utils/pageTexts';
 import { getInquiries } from '../utils/storage';
-import { getPageText, getCommonText } from '../utils/pageTexts';
 
 ChartJS.register(
   CategoryScale,
@@ -72,6 +72,7 @@ interface DonutChartWidgetProps {
 }
 
 const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: externalPeriod, onPeriodChange, showPeriodSelector = true }: DonutChartWidgetProps) => {
+  const theme = useTheme();
   const [internalPeriod, setInternalPeriod] = useState<PeriodFilter>('30days');
   const period = externalPeriod !== undefined ? externalPeriod : internalPeriod;
 
@@ -201,7 +202,7 @@ const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: extern
           )}
         </Box>
         <Box sx={{ height: 200, position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2, flexShrink: 0 }}>
-          <Doughnut data={chartDataWithTones} options={chartOptions} />
+          <Doughnut key={theme.palette.mode} data={chartDataWithTones} options={chartOptions} />
           {(() => {
             const total = values.reduce((sum, val) => sum + val, 0);
             return (
@@ -243,7 +244,7 @@ const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: extern
                       bgcolor: chartDataWithTones.datasets[0].backgroundColor[index],
                     }}
                   />
-                  <Typography variant="body2" color="text.primary">
+                  <Typography variant="body2">
                     {label}
                   </Typography>
                 </Box>
@@ -251,7 +252,7 @@ const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: extern
                   <Typography variant="body2" fontWeight={600} color="text.primary">
                     {values[index].toLocaleString()}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" fontWeight={400} color="text.secondary">
                     {percentage}%
                   </Typography>
                 </Box>
@@ -269,6 +270,7 @@ const DonutChartWidget = ({ title, inquiries, getData, baseColor, period: extern
 const InquiryAnalysisPage = () => {
   const { language } = useLanguage();
   const theme = useTheme();
+  const { mode } = useColorScheme();
   const trigger = useScrollTrigger({
     disableHysteresis: true,
     threshold: 100,
@@ -562,7 +564,7 @@ const InquiryAnalysisPage = () => {
   }, [categoryProcessingTimeByAnswerer, categoryOverallAverage, theme]);
 
   // 처리 시간 차트 옵션 (바 차트)
-  const processingTimeChartOptions = {
+  const processingTimeChartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     datasets: {
@@ -628,7 +630,7 @@ const InquiryAnalysisPage = () => {
         beginAtZero: true,
         grid: {
           display: true,
-          color: theme.palette.divider,
+          color: () => mode === 'dark' ? alpha(theme.palette.divider, 0.3) : theme.palette.divider,
           drawBorder: false,
         },
         ticks: {
@@ -642,7 +644,117 @@ const InquiryAnalysisPage = () => {
         },
       },
     },
-  };
+  }), [mode, theme.palette.divider, theme.palette.text.primary, theme.palette.text.secondary, theme.palette.background.paper]);
+
+  // 스택형 바차트 옵션 (테마 변경 시 재생성)
+  const stackedBarChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    datasets: {
+      bar: {
+        barPercentage: 1,
+        categoryPercentage: 0.4,
+      },
+    },
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: theme.palette.background.paper,
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.primary,
+        borderColor: theme.palette.divider,
+        borderWidth: 1,
+        padding: 12,
+        callbacks: {
+          label: (context: any) => {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y || 0;
+            return `${label}: ${value}건`;
+          },
+        },
+      },
+      // 선택된 날짜의 x축 틱에 배경색 추가
+      ...(selectedBarIndex !== null && {
+        afterDraw: (chart: any) => {
+          const ctx = chart.ctx;
+          const chartArea = chart.chartArea;
+          const meta = chart.getDatasetMeta(0);
+          const xScale = chart.scales.x;
+
+          if (xScale && meta && selectedBarIndex !== null) {
+            const tickIndex = selectedBarIndex;
+            const tick = xScale.ticks[tickIndex];
+
+            if (tick) {
+              const tickPosition = xScale.getPixelForValue(tickIndex);
+              const tickWidth = xScale.width / (xScale.ticks.length - 1);
+
+              // 배경색 그리기
+              ctx.save();
+              ctx.fillStyle = alpha(theme.palette.primary.main, 0.1);
+              ctx.fillRect(
+                tickPosition - tickWidth / 2,
+                chartArea.top,
+                tickWidth,
+                chartArea.bottom - chartArea.top
+              );
+              ctx.restore();
+            }
+          }
+        },
+      }),
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: (context: any) => {
+            const isSelected = selectedBarIndex !== null && context.index === selectedBarIndex;
+            return {
+              size: 11,
+              weight: isSelected ? 600 : 400,
+            };
+          },
+          color: (context: any) => {
+            const isSelected = selectedBarIndex !== null && context.index === selectedBarIndex;
+            return isSelected ? theme.palette.primary.main : theme.palette.text.secondary;
+          },
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        grid: {
+          color: mode === 'dark' ? alpha(theme.palette.divider, 0.3) : theme.palette.divider,
+        },
+        ticks: {
+          font: {
+            size: 11,
+          },
+          color: theme.palette.text.secondary,
+        },
+      },
+    },
+    onClick: (_event: any, elements: any[]) => {
+      if (elements.length > 0) {
+        const element = elements[0];
+        const index = element.index;
+        setSelectedBarIndex(index);
+      } else {
+        setSelectedBarIndex(null);
+      }
+    },
+  }), [mode, theme.palette.divider, theme.palette.text.primary, theme.palette.text.secondary, theme.palette.background.paper, theme.palette.primary.main, selectedBarIndex]);
 
   // CSV 다운로드 핸들러
   const handleExportProcessingTimeCSV = () => {
@@ -711,6 +823,7 @@ const InquiryAnalysisPage = () => {
 
   return (
     <>
+      123
       {/* 문의 현황 분석 섹션 */}
       <Grid container spacing={2} sx={{ mb: 4.5 }}>
         <Grid size={{ xs: 12 }}>
@@ -820,7 +933,15 @@ const InquiryAnalysisPage = () => {
                         setCustomStartDate(e.target.value);
                         setStackedBarPeriodFilter('custom');
                       }}
-                      sx={{ width: 150 }}
+                      sx={{
+                        width: 150,
+                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                          filter: mode === 'dark' ? 'invert(1)' : 'none',
+                        },
+                        '& input[type="date"]': {
+                          color: 'text.primary',
+                        },
+                      }}
                       InputLabelProps={{ shrink: true }}
                       label="시작일"
                     />
@@ -835,7 +956,15 @@ const InquiryAnalysisPage = () => {
                         setCustomEndDate(e.target.value);
                         setStackedBarPeriodFilter('custom');
                       }}
-                      sx={{ width: 150 }}
+                      sx={{
+                        width: 150,
+                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                          filter: mode === 'dark' ? 'invert(1)' : 'none',
+                        },
+                        '& input[type="date"]': {
+                          color: 'text.primary',
+                        },
+                      }}
                       InputLabelProps={{ shrink: true }}
                       label="종료일"
                     />
@@ -1054,112 +1183,7 @@ const InquiryAnalysisPage = () => {
                   ],
                 };
 
-                const stackedBarChartOptions: any = {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  datasets: {
-                    bar: {
-                      barPercentage: 1,
-                      categoryPercentage: 0.4,
-                    },
-                  },
-                  interaction: {
-                    mode: 'index' as const,
-                    intersect: false,
-                  },
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      enabled: true,
-                      backgroundColor: theme.palette.background.paper,
-                      titleColor: theme.palette.text.primary,
-                      bodyColor: theme.palette.text.primary,
-                      borderColor: theme.palette.divider,
-                      borderWidth: 1,
-                      padding: 12,
-                      callbacks: {
-                        label: (context: any) => {
-                          const label = context.dataset.label || '';
-                          const value = context.parsed.y || 0;
-                          return `${label}: ${value}건`;
-                        },
-                      },
-                    },
-                    // 선택된 날짜의 x축 틱에 배경색 추가
-                    ...(selectedBarIndex !== null && {
-                      afterDraw: (chart: any) => {
-                        const ctx = chart.ctx;
-                        const chartArea = chart.chartArea;
-                        const meta = chart.getDatasetMeta(0);
-                        const xScale = chart.scales.x;
-
-                        if (xScale && meta && selectedBarIndex !== null) {
-                          const tickIndex = selectedBarIndex;
-                          const tick = xScale.ticks[tickIndex];
-
-                          if (tick) {
-                            const tickPosition = xScale.getPixelForValue(tickIndex);
-                            const tickWidth = xScale.width / (xScale.ticks.length - 1);
-
-                            // 배경색 그리기
-                            ctx.save();
-                            ctx.fillStyle = alpha(theme.palette.primary.main, 0.1);
-                            ctx.fillRect(
-                              tickPosition - tickWidth / 2,
-                              chartArea.top,
-                              tickWidth,
-                              chartArea.bottom - chartArea.top
-                            );
-                            ctx.restore();
-                          }
-                        }
-                      },
-                    }),
-                  },
-                  scales: {
-                    x: {
-                      stacked: true,
-                      grid: {
-                        display: false,
-                      },
-                      ticks: {
-                        font: (context: any) => {
-                          const isSelected = selectedBarIndex !== null && context.index === selectedBarIndex;
-                          return {
-                            size: 11,
-                            weight: isSelected ? 600 : 400,
-                          };
-                        },
-                        color: (context: any) => {
-                          const isSelected = selectedBarIndex !== null && context.index === selectedBarIndex;
-                          return isSelected ? theme.palette.primary.main : theme.palette.text.secondary;
-                        },
-                      },
-                    },
-                    y: {
-                      stacked: true,
-                      beginAtZero: true,
-                      grid: {
-                        color: theme.palette.divider,
-                      },
-                      ticks: {
-                        font: {
-                          size: 11,
-                        },
-                        color: theme.palette.text.secondary,
-                      },
-                    },
-                  },
-                  onClick: (_event: any, elements: any[]) => {
-                    if (elements.length > 0) {
-                      const element = elements[0];
-                      const index = element.index;
-                      setSelectedBarIndex(index);
-                    }
-                  },
-                };
+                // stackedBarChartOptions는 컴포넌트 최상위 레벨에서 useMemo로 정의됨
 
                 const selectedBarInquiries = selectedBarIndex !== null ? barInquiries[selectedBarIndex] || [] : [];
 
@@ -1212,7 +1236,7 @@ const InquiryAnalysisPage = () => {
                   <>
                     {/* 바차트 */}
                     <Box sx={{ height: 400, mb: 3 }}>
-                      <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
+                      <Bar key={`${theme.palette.mode}-${JSON.stringify(stackedBarChartOptions)}`} data={stackedBarChartData} options={stackedBarChartOptions} />
                     </Box>
 
                     {/* 선택된 바의 상세 정보 */}
@@ -1221,13 +1245,10 @@ const InquiryAnalysisPage = () => {
                         {/* 상세 정보 테이블 */}
                         <Grid container spacing={2} sx={{ mb: 3 }}>
                           <Grid size={{ xs: 12, md: 4 }} sx={{ mt: 1.5, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1, height: '100%' }}>
+                            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                   카테고리별
-                                </Typography>
-                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
-                                  {Object.values(selectedCategoryCounts).reduce((sum, count) => sum + count, 0).toLocaleString()}
                                 </Typography>
                               </Box>
                               {Object.keys(selectedCategoryCounts).length > 0 ? (
@@ -1236,7 +1257,7 @@ const InquiryAnalysisPage = () => {
                                     .sort(([, a], [, b]) => b - a)
                                     .map(([label, count]) => (
                                       <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Typography variant="body2">{label}</Typography>
+                                        <Typography variant="body2" color="text.secondary">{label}</Typography>
                                         <Typography variant="body2" fontWeight={600}>
                                           {count}
                                         </Typography>
@@ -1251,13 +1272,10 @@ const InquiryAnalysisPage = () => {
                             </Box>
                           </Grid>
                           <Grid size={{ xs: 12, md: 4 }} sx={{ mt: 1.5, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1, height: '100%' }}>
+                            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                   작성자 유형별
-                                </Typography>
-                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
-                                  {Object.values(selectedUserTypeCounts).reduce((sum, count) => sum + count, 0).toLocaleString()}
                                 </Typography>
                               </Box>
                               {Object.keys(selectedUserTypeCounts).length > 0 ? (
@@ -1266,7 +1284,7 @@ const InquiryAnalysisPage = () => {
                                     .sort(([, a], [, b]) => b - a)
                                     .map(([label, count]) => (
                                       <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Typography variant="body2">{label}</Typography>
+                                        <Typography variant="body2" color="text.secondary">{label}</Typography>
                                         <Typography variant="body2" fontWeight={600}>
                                           {count}
                                         </Typography>
@@ -1281,13 +1299,10 @@ const InquiryAnalysisPage = () => {
                             </Box>
                           </Grid>
                           <Grid size={{ xs: 12, md: 4 }} sx={{ mt: 1.5, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1, height: '100%' }}>
+                            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                   국적별
-                                </Typography>
-                                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
-                                  {Object.values(selectedCountryCounts).reduce((sum, count) => sum + count, 0).toLocaleString()}
                                 </Typography>
                               </Box>
                               {Object.keys(selectedCountryCounts).length > 0 ? (
@@ -1296,7 +1311,7 @@ const InquiryAnalysisPage = () => {
                                     .sort(([, a], [, b]) => b - a)
                                     .map(([label, count]) => (
                                       <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Typography variant="body2">{label}</Typography>
+                                        <Typography variant="body2" color="text.secondary">{label}</Typography>
                                         <Typography variant="body2" fontWeight={600}>
                                           {count}
                                         </Typography>
@@ -1587,7 +1602,7 @@ const InquiryAnalysisPage = () => {
               </Box>
               {categoryProcessingTimeByAnswerer.categories.length > 0 && categoryProcessingTimeByAnswerer.answererIds.length > 0 ? (
                 <Box sx={{ height: 400 }}>
-                  <Bar data={processingTimeChartData} options={processingTimeChartOptions} />
+                  <Bar key={theme.palette.mode} data={processingTimeChartData} options={processingTimeChartOptions} />
                 </Box>
               ) : (
                 <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2222,6 +2237,7 @@ const InquiryAnalysisPage = () => {
                     {/* 전체 시간대별 분포 차트 */}
                     <Box sx={{ height: 700 }}>
                       <Bubble
+                        key={theme.palette.mode}
                         data={{
                           datasets: (() => {
                             // 필터별로 데이터셋 분리
@@ -2531,7 +2547,7 @@ const InquiryAnalysisPage = () => {
                                   color: theme.palette.text.secondary,
                                 },
                               grid: {
-                                color: theme.palette.divider,
+                                color: () => mode === 'dark' ? alpha(theme.palette.divider, 0.3) : theme.palette.divider,
                               },
                             },
                             y: {
@@ -2559,7 +2575,7 @@ const InquiryAnalysisPage = () => {
                                 color: theme.palette.text.secondary,
                               },
                               grid: {
-                                color: theme.palette.divider,
+                                color: () => mode === 'dark' ? alpha(theme.palette.divider, 0.3) : theme.palette.divider,
                               },
                             },
                           },
@@ -2716,9 +2732,10 @@ const InquiryAnalysisPage = () => {
                               <Box
                                 sx={{
                                   p: 2,
-                                  border: `1px solid ${theme.palette.divider}`,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
                                   borderRadius: 2,
-                                  backgroundColor: theme.palette.background.paper,
+                                  backgroundColor: 'background.paper',
                                   height: '100%',
                                 }}
                               >
@@ -2727,6 +2744,7 @@ const InquiryAnalysisPage = () => {
                                 </Typography>
                                 <Box sx={{ height: 200, mb: 2, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <Doughnut
+                                    key={theme.palette.mode}
                                     data={chartData}
                                     options={chartOptions}
                                     ref={chartRef}

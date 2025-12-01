@@ -278,14 +278,241 @@ export const Provider = ({ children }: { children: React.ReactNode }) => {
 - Use responsive breakpoints when needed
 - Keep styles co-located with components
 - Use `styled` API for complex reusable styled components
-- **Dark Mode Compatibility**: Always ensure CSS/styling works in both light and dark modes
-  - Never use hardcoded colors (e.g., `#ffffff`, `#000000`) - use theme colors instead
-  - Use theme-aware color values: `'text.primary'`, `'text.secondary'`, `'background.paper'`, `'background.default'`
-  - Use `'divider'` for borders instead of hardcoded gray colors
-  - When using custom colors, provide both light and dark variants in theme palette
-  - Test all styling changes in both light and dark modes
-  - Use `useTheme()` hook or theme-aware `sx` prop values for dynamic color selection
-  - For custom CSS (if necessary), use CSS variables or theme-aware selectors
+
+### Dark Mode Support Guidelines
+**모든 작업에 있어서 다크모드가 지원되어야 합니다.** 이는 필수 요구사항이며, 모든 컴포넌트, 페이지, 스타일링 작업에서 반드시 고려해야 합니다.
+
+#### Core Principles
+- **항상 다크모드 지원**: 모든 UI 컴포넌트는 라이트 모드와 다크 모드 모두에서 올바르게 작동해야 합니다
+- **테마 색상 사용**: 하드코딩된 색상은 절대 사용하지 않습니다
+- **자동 색상 전환**: MUI 테마 시스템을 통해 자동으로 색상이 전환되도록 구현합니다
+- **테스트 필수**: 모든 스타일 변경사항은 라이트 모드와 다크 모드 모두에서 테스트해야 합니다
+
+#### Color Usage Rules
+- **절대 금지**: 하드코딩된 색상 값 사용 금지
+  - ❌ `#ffffff`, `#000000`, `#f5f5f5` 등 직접 색상 값 사용 금지
+  - ❌ `rgb(255, 255, 255)`, `rgba(0, 0, 0, 0.5)` 등 직접 색상 값 사용 금지
+  - ✅ 테마 색상 값 사용: `'text.primary'`, `'background.paper'`, `'primary.main'` 등
+
+- **필수 사용**: 테마 인식 색상 값 사용
+  - 텍스트 색상: `'text.primary'`, `'text.secondary'`, `'text.disabled'`
+  - 배경 색상: `'background.paper'`, `'background.default'`
+  - 구분선 색상: `'divider'`
+  - 테마 색상: `'primary.main'`, `'secondary.main'`, `'error.main'`, `'warning.main'`, `'info.main'`, `'success.main'`
+
+- **커스텀 색상 사용 시**: 테마 팔레트에 라이트/다크 변형 모두 제공
+  ```typescript
+  // 테마 팔레트에 추가
+  const theme = createTheme({
+    palette: {
+      mode: 'light', // 또는 'dark'
+      custom: {
+        light: '#f5f5f5', // 라이트 모드용
+        dark: '#1a1a1a',  // 다크 모드용
+      }
+    }
+  });
+  ```
+
+#### Implementation Patterns
+
+##### Using sx Prop (권장)
+```typescript
+// ✅ 올바른 방법: 테마 색상 사용
+<Box
+  sx={{
+    bgcolor: 'background.paper',
+    color: 'text.primary',
+    border: '1px solid',
+    borderColor: 'divider',
+  }}
+>
+  <Typography color="text.secondary">Content</Typography>
+</Box>
+
+// ❌ 잘못된 방법: 하드코딩된 색상
+<Box
+  sx={{
+    bgcolor: '#ffffff',
+    color: '#000000',
+    border: '1px solid #e0e0e0',
+  }}
+>
+  <Typography sx={{ color: '#666666' }}>Content</Typography>
+</Box>
+```
+
+##### Using useTheme Hook
+```typescript
+import { useTheme } from '@mui/material/styles';
+
+const MyComponent = () => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      sx={{
+        bgcolor: theme.palette.mode === 'dark'
+          ? theme.palette.grey[800]
+          : theme.palette.grey[100],
+        color: theme.palette.text.primary,
+      }}
+    >
+      Content
+    </Box>
+  );
+};
+```
+
+##### Using styled API
+```typescript
+import { styled } from '@mui/material/styles';
+
+const StyledBox = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
+  border: `1px solid ${theme.palette.divider}`,
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
+```
+
+##### Custom CSS (최후의 수단)
+커스텀 CSS를 사용해야 하는 경우, CSS 변수나 테마 인식 셀렉터를 사용합니다:
+
+```typescript
+// ✅ CSS 변수 사용
+const styles = {
+  container: {
+    backgroundColor: 'var(--mui-palette-background-paper)',
+    color: 'var(--mui-palette-text-primary)',
+  }
+};
+
+// ✅ 테마 인식 셀렉터
+const styles = {
+  container: {
+    '@media (prefers-color-scheme: dark)': {
+      backgroundColor: '#1a1a1a',
+      color: '#ffffff',
+    },
+    '@media (prefers-color-scheme: light)': {
+      backgroundColor: '#ffffff',
+      color: '#000000',
+    },
+  }
+};
+```
+
+#### Component-Specific Guidelines
+
+##### Buttons
+```typescript
+// ✅ 올바른 방법
+<Button
+  variant="contained"
+  sx={{
+    bgcolor: 'primary.main',
+    color: 'primary.contrastText',
+    '&:hover': {
+      bgcolor: 'primary.dark',
+    },
+  }}
+>
+  Click me
+</Button>
+```
+
+##### Cards and Papers
+```typescript
+// ✅ 올바른 방법
+<Paper
+  sx={{
+    bgcolor: 'background.paper',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'none',
+  }}
+>
+  Content
+</Paper>
+```
+
+##### Tables
+```typescript
+// ✅ 올바른 방법
+<TableContainer component={Paper}>
+  <Table>
+    <TableHead>
+      <TableRow>
+        <TableCell sx={{ color: 'text.primary' }}>Header</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      <TableRow>
+        <TableCell sx={{ color: 'text.primary' }}>Data</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</TableContainer>
+```
+
+##### Dialogs and Modals
+```typescript
+// ✅ 올바른 방법
+<Dialog
+  PaperProps={{
+    sx: {
+      bgcolor: 'background.paper',
+      color: 'text.primary',
+    },
+  }}
+>
+  <DialogTitle sx={{ color: 'text.primary' }}>Title</DialogTitle>
+  <DialogContent sx={{ color: 'text.primary' }}>Content</DialogContent>
+</Dialog>
+```
+
+##### Icons
+```typescript
+// ✅ 올바른 방법
+<IconButton sx={{ color: 'text.primary' }}>
+  <Icon />
+</IconButton>
+```
+
+#### Image and Media Handling
+- **이미지 배경**: 투명 배경 이미지는 다크모드에서도 잘 보이도록 고려
+- **로고**: 다크모드용 로고 버전이 필요할 수 있음
+- **아이콘**: MUI 아이콘은 자동으로 테마 색상을 따르지만, 커스텀 아이콘은 색상 지정 필요
+
+#### Testing Checklist
+모든 스타일 변경 후 다음을 확인해야 합니다:
+
+- [ ] 라이트 모드에서 모든 요소가 올바르게 표시되는가?
+- [ ] 다크 모드에서 모든 요소가 올바르게 표시되는가?
+- [ ] 텍스트 가독성이 양쪽 모드에서 충분한가?
+- [ ] 배경과 텍스트의 대비가 충분한가?
+- [ ] 구분선과 테두리가 양쪽 모드에서 명확한가?
+- [ ] 호버 상태가 양쪽 모드에서 올바르게 작동하는가?
+- [ ] 포커스 상태가 양쪽 모드에서 명확한가?
+- [ ] 선택된 상태가 양쪽 모드에서 명확한가?
+
+#### Common Mistakes to Avoid
+- ❌ **하드코딩된 색상**: `#ffffff`, `#000000` 등 직접 색상 값 사용
+- ❌ **라이트 모드만 고려**: 다크 모드 테스트 누락
+- ❌ **배경색만 변경**: 텍스트 색상도 함께 변경하지 않음
+- ❌ **투명도 무시**: `rgba(0, 0, 0, 0.1)` 같은 투명도가 다크 모드에서 보이지 않을 수 있음
+- ❌ **그림자 무시**: 다크 모드에서 그림자가 보이지 않을 수 있음
+- ❌ **이미지 배경**: 투명 배경 이미지가 다크 모드에서 보이지 않을 수 있음
+
+#### Summary
+- **필수 요구사항**: 모든 작업에서 다크모드 지원 필수
+- **테마 색상 사용**: 하드코딩된 색상 절대 금지
+- **자동 전환**: MUI 테마 시스템 활용
+- **테스트 필수**: 라이트/다크 모드 모두 테스트
+- **일관성 유지**: 모든 컴포넌트에서 동일한 패턴 적용
 
 ### Table Design Guidelines
 모든 테이블은 일관된 디자인을 유지해야 합니다. 문의 목록 테이블(`InquiryListPage.tsx`)의 스타일 규칙을 표준으로 따릅니다.
@@ -1303,3 +1530,4 @@ useEffect(() => {
 5. Update Context if global state is needed
 6. Use existing utility functions when possible
 7. Test with Korean (IME) input when applicable
+8. **Test in both light and dark modes** - All UI changes must be verified in both modes

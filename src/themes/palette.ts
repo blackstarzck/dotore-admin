@@ -1,9 +1,10 @@
 // third-party
 import { presetPalettes } from '@ant-design/colors';
+import { alpha } from '@mui/material/styles';
 
 // project imports
-import ThemeOption from './theme';
 import { extendPaletteWithChannels } from '../utils/colorUtils';
+import ThemeOption from './theme';
 
 const greyAscent = ['#fafafa', '#bfbfbf', '#434343', '#1f1f1f'];
 
@@ -66,7 +67,7 @@ export function buildPalette(_presetColor: string = 'default') {
       ...extendedDark,
       text: {
         primary: extendedDark.grey[0], // #ffffff - mantis 스타일: 밝은 텍스트
-        secondary: extendedDark.grey[200], // #f0f0f0 - mantis 스타일: 보조 텍스트
+        secondary: alpha(extendedDark.grey[0], 0.6), // #ffffff에 60% 투명도 적용 - 더 어두운 보조 텍스트
         disabled: extendedDark.grey[400] // #bfbfbf - mantis 스타일: 비활성 텍스트
       },
       action: { disabled: extendedDark.grey[600] }, // #8c8c8c

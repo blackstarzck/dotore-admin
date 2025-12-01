@@ -32,6 +32,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { useTheme, useColorScheme } from '@mui/material/styles';
 import dayjs, { Dayjs } from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import QueryBuilder, { formatQuery, RuleGroupType } from 'react-querybuilder';
@@ -68,6 +69,8 @@ function CustomTabPanel(props: TabPanelProps) {
 const MailGroupPage = () => {
   const { language } = useLanguage();
   const { showSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const { mode } = useColorScheme();
   const [groups, setGroups] = useState<SendGroup[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -493,6 +496,9 @@ const MailGroupPage = () => {
                         size: 'small',
                         sx: { minWidth: 120 },
                       },
+                      actionBar: {
+                        actions: ['clear', 'today'],
+                      },
                     }}
                   />
                   <Typography variant="body2" color="text.secondary">
@@ -505,6 +511,9 @@ const MailGroupPage = () => {
                       textField: {
                         size: 'small',
                         sx: { minWidth: 120 },
+                      },
+                      actionBar: {
+                        actions: ['clear', 'today'],
                       },
                     }}
                   />
@@ -520,7 +529,7 @@ const MailGroupPage = () => {
             }
           };
           return (
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
               <DatePicker
                 value={props.value ? dayjs(props.value) : null}
                 onChange={handleChange}
@@ -529,6 +538,9 @@ const MailGroupPage = () => {
                     size: 'small',
                     placeholder: 'Value',
                     sx: { minWidth: 150, mr: 1 },
+                  },
+                  actionBar: {
+                    actions: ['clear', 'today'],
                   },
                 }}
               />
@@ -566,6 +578,9 @@ const MailGroupPage = () => {
                         size: 'small',
                         sx: { minWidth: 150 },
                       },
+                      actionBar: {
+                        actions: ['clear', 'today'],
+                      },
                     }}
                   />
                   <Typography variant="body2" color="text.secondary">
@@ -578,6 +593,9 @@ const MailGroupPage = () => {
                       textField: {
                         size: 'small',
                         sx: { minWidth: 150 },
+                      },
+                      actionBar: {
+                        actions: ['clear', 'today'],
                       },
                     }}
                   />
@@ -602,6 +620,9 @@ const MailGroupPage = () => {
                     size: 'small',
                     placeholder: 'Value',
                     sx: { minWidth: 150, mr: 1 },
+                  },
+                  actionBar: {
+                    actions: ['clear', 'today'],
                   },
                 }}
               />

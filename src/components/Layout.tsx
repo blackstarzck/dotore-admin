@@ -21,7 +21,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
-import { CSSObject, styled, Theme, useTheme } from '@mui/material/styles';
+import { CSSObject, styled, Theme, useTheme, useColorScheme } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -107,6 +107,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 const Layout = () => {
   const theme = useTheme();
   const { mode, toggleColorMode } = useColorMode();
+  const { mode: colorSchemeMode } = useColorScheme();
   const { language, setLanguage, t } = useLanguage();
   const [open, setOpen] = React.useState(false);
   const [inquiryOpen, setInquiryOpen] = React.useState(true);
@@ -448,7 +449,7 @@ const Layout = () => {
                     px: open ? 2.5 : 1.5,
                     py: !open ? 1.25 : 1,
                     ...(open && {
-                      '&:hover': { bgcolor: 'primary.lighter' },
+                      '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                       // 상위 메뉴는 배경색과 세로선 없이 텍스트 색상만 변경
                       color: (location.pathname === '/' || location.pathname === '/analysis') ? 'primary.main' : 'text.primary',
                     }),
@@ -473,8 +474,8 @@ const Layout = () => {
                       }),
                       ...(!open &&
                         (location.pathname === '/' || location.pathname === '/analysis') && {
-                        bgcolor: 'primary.lighter',
-                        '&:hover': { bgcolor: 'primary.lighter' }
+                        bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
+                        '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                       })
                     })}
                   >
@@ -499,13 +500,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정 (상위 메뉴 아이콘 너비 고려)
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname === '/'}
@@ -526,13 +527,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname === '/analysis'}
@@ -568,7 +569,7 @@ const Layout = () => {
                     px: open ? 2.5 : 1.5,
                     py: !open ? 1.25 : 1,
                     ...(open && {
-                      '&:hover': { bgcolor: 'primary.lighter' },
+                      '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                       // 상위 메뉴는 배경색과 세로선 없이 텍스트 색상만 변경
                       color: (location.pathname.startsWith('/auto-mail') || location.pathname.startsWith('/manual-mail') || location.pathname === '/mail-group' || location.pathname === '/mail-history') ? 'primary.main' : 'text.primary',
                     }),
@@ -593,8 +594,8 @@ const Layout = () => {
                       }),
                       ...(!open &&
                         (location.pathname.startsWith('/auto-mail') || location.pathname.startsWith('/manual-mail')) && {
-                        bgcolor: 'primary.lighter',
-                        '&:hover': { bgcolor: 'primary.lighter' }
+                        bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
+                        '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                       })
                     })}
                   >
@@ -619,13 +620,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정 (상위 메뉴 아이콘 너비 고려)
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname.startsWith('/auto-mail')}
@@ -646,13 +647,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname.startsWith('/manual-mail')}
@@ -673,13 +674,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname === '/mail-group'}
@@ -700,13 +701,13 @@ const Layout = () => {
                     <ListItemButton
                         sx={(_theme) => ({
                           pl: 9, // 들여쓰기 조정
-                          '&:hover': { bgcolor: 'primary.lighter' },
+                          '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
                           '&.Mui-selected': {
-                            bgcolor: 'primary.lighter',
+                            bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
                             borderRight: '2px solid',
                             borderColor: 'primary.main',
                             color: 'primary.main',
-                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                            '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                           }
                         })}
                         selected={location.pathname === '/mail-history'}
@@ -908,7 +909,7 @@ const Layout = () => {
                   px: open ? 2.5 : 1.5,
                   py: !open ? 1.25 : 1,
                   ...(open && {
-                    '&:hover': { bgcolor: 'primary.lighter' }
+                    '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
                   }),
                   ...(!open && {
                     '&:hover': { bgcolor: 'transparent' }
