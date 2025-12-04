@@ -189,6 +189,8 @@ export interface SendGroup {
   id: string;
   name: string;
   description?: string;
+  memberCount?: number;
+  memberCountCheckedAt?: string; // 조회하기를 눌러 memberCount를 확인한 시간
   createdAt: string;
   updatedAt: string;
 }

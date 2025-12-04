@@ -1,4 +1,4 @@
-import { DarkMode, Email, ExpandLess, ExpandMore, Fullscreen, FullscreenExit, GridView, LightMode, Logout, Notifications, SupportAgent } from '@mui/icons-material';
+import { DarkMode, Email, ExpandLess, ExpandMore, Fullscreen, FullscreenExit, GridView, LightMode, Logout, Notifications, People, SupportAgent } from '@mui/icons-material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -760,6 +760,72 @@ const Layout = () => {
                 </List>
             </Collapse>
 
+            {/* 회원 관리 (단일 메뉴) */}
+            <ListItem disablePadding sx={{ display: 'block' }}>
+              <Box sx={{ position: 'relative' }}>
+                <ListItemButton
+                  selected={location.pathname === '/member'}
+                  onClick={() => {
+                    if (location.pathname !== '/member') {
+                      navigate('/member');
+                    }
+                  }}
+                  sx={(_theme) => ({
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: open ? 2.5 : 1.5,
+                    py: !open ? 1.25 : 1,
+                    ...(open && {
+                      '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' },
+                      color: location.pathname === '/member' ? 'primary.main' : 'text.primary',
+                      '&.Mui-selected': {
+                        bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
+                        borderRight: '2px solid',
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                        '&:hover': { color: 'primary.main', bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
+                      }
+                    }),
+                    ...(!open && {
+                      '&:hover': { bgcolor: 'transparent' }
+                    })
+                  })}
+                >
+                  <ListItemIcon
+                    sx={(_theme) => ({
+                      minWidth: 28,
+                      color: location.pathname === '/member' ? 'primary.main' : 'text.primary',
+                      mr: open ? 3 : 'auto',
+                      justifyContent: 'center',
+                      ...(!open && {
+                        borderRadius: 1.5,
+                        width: 36,
+                        height: 36,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        '&:hover': { bgcolor: 'secondary.lighter' }
+                      }),
+                      ...(!open &&
+                        location.pathname === '/member' && {
+                        bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter',
+                        '&:hover': { bgcolor: colorSchemeMode === 'dark' ? 'action.hover' : 'primary.lighter' }
+                      })
+                    })}
+                  >
+                    <People />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography variant="h6" sx={{ color: location.pathname === '/member' ? 'primary.main' : 'text.primary' }}>
+                        {t('menu.member')}
+                      </Typography>
+                    }
+                    sx={{ opacity: open ? 1 : 0 }}
+                  />
+                </ListItemButton>
+              </Box>
+            </ListItem>
+
             {/* 접혀있을 때 하위 메뉴 Popover (공유) */}
             <Popover
               open={Boolean(popoverAnchor) && activeMenu !== null}
@@ -979,9 +1045,10 @@ const Layout = () => {
           </ListItem>
         </List>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      
+      <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <DrawerHeader />
-        <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }}>
+        <Container maxWidth="xl" sx={{ mt: 2, mb: 4, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Breadcrumbs 추가 */}
           <Breadcrumbs
             aria-label="breadcrumb"
@@ -1055,6 +1122,12 @@ const Layout = () => {
                 </LinkMaterial>,
                 <Typography key="history" color="text.primary" sx={{ fontWeight: 500 }}>
                   {t('breadcrumb.mail.history')}
+                </Typography>
+              ]
+            ) : location.pathname === '/member' ? (
+              [
+                <Typography key="member" color="text.primary" sx={{ fontWeight: 500 }}>
+                  {t('breadcrumb.member')}
                 </Typography>
               ]
             ) : (

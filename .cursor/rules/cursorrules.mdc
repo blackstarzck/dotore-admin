@@ -517,6 +517,77 @@ const styles = {
 ### Table Design Guidelines
 모든 테이블은 일관된 디자인을 유지해야 합니다. 문의 목록 테이블(`InquiryListPage.tsx`)의 스타일 규칙을 표준으로 따릅니다.
 
+#### Table Loading UI (필수)
+**테이블과 관련된 컴포넌트를 만들 때 반드시 테이블 로딩 UI가 있어야 하며, 이는 테이블에 데이터를 넣기 전에 보여져야 합니다.**
+
+- **로딩 상태 관리**: `isLoading` 또는 `isLoadingData` 같은 상태 변수를 사용하여 로딩 상태를 관리합니다
+- **로딩 UI 표시 위치**: `TableBody` 내부에서 로딩 상태일 때 로딩 UI를 표시합니다
+- **로딩 UI 구조**: `CircularProgress`와 로딩 메시지를 포함한 `TableRow`를 사용합니다
+- **데이터 로드 전 표시**: 데이터를 불러오기 전에 로딩 UI가 먼저 표시되어야 합니다
+
+Example pattern:
+```typescript
+const [isLoading, setIsLoading] = useState<boolean>(false);
+const [data, setData] = useState<DataType[]>([]);
+
+// 데이터 로드 함수
+const loadData = async () => {
+  setIsLoading(true);
+  try {
+    // 네트워크 지연 시뮬레이션 또는 실제 API 호출
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const fetchedData = await fetchDataFromAPI();
+    setData(fetchedData);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// 컴포넌트 마운트 시 데이터 로드
+useEffect(() => {
+  loadData();
+}, []);
+
+// 테이블 렌더링
+<TableBody>
+  {isLoading ? (
+    <TableRow>
+      <TableCell colSpan={컬럼수} align="center" sx={{ py: 8 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <CircularProgress size={40} />
+          <Typography variant="body2" color="text.secondary">
+            데이터를 불러오는 중...
+          </Typography>
+        </Box>
+      </TableCell>
+    </TableRow>
+  ) : data.length === 0 ? (
+    <TableRow>
+      <TableCell colSpan={컬럼수} align="center" sx={{ py: 8 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h6" color="text.secondary">
+            조회된 데이터가 없습니다.
+          </Typography>
+        </Box>
+      </TableCell>
+    </TableRow>
+  ) : (
+    data.map((item) => (
+      <TableRow key={item.id}>
+        {/* 데이터 행 렌더링 */}
+      </TableRow>
+    ))
+  )}
+</TableBody>
+```
+
+**Key Points:**
+- **필수 구현**: 모든 테이블 컴포넌트에 로딩 UI 구현 필수
+- **데이터 로드 전 표시**: 데이터를 불러오기 전에 로딩 UI가 먼저 표시되어야 함
+- **로딩 상태 관리**: 비동기 데이터 로드 함수에서 로딩 상태를 적절히 관리
+- **일관된 UI**: 모든 테이블에서 동일한 로딩 UI 패턴 사용
+- **사용자 경험**: 데이터 로드 중 사용자에게 명확한 피드백 제공
+
 #### Table Container & Wrapper
 - 테이블은 `Paper` 컴포넌트로 감싸야 합니다
 - Paper 스타일:
@@ -590,7 +661,110 @@ const styles = {
 - 데이터 행에는 `hover` 속성을 사용합니다
 - 클릭 가능한 행은 `sx={{ cursor: 'pointer' }}`를 추가합니다
 
+#### Table Schema Definitions
+**사이드바에서 보여지는 모든 페이지에 테이블 컴포넌트가 있는 경우, 각 테이블의 구조를 정의합니다. 나중에 데이터베이스 스키마 설정 시 필요합니다.**
+
+##### 1. InquiryListPage (문의 목록) - `/`
+**테이블명**: `inquiries`
+
+| 컬럼명 | 타입 | 설명 | 정렬 가능 | 필수 |
+|--------|------|------|----------|------|
+| `id` | string | 문의 고유 ID (PK) | ❌ | ✅ |
+| `number` | number | 문의 번호 | ❌ | ✅ |
+| `category` | string | 카테고리 (InquiryCategory enum) | ✅ | ✅ |
+| `user_name` | string | 사용자 이름(아이디) | ✅ | ✅ |
+| `user_nickname` | string | 사용자 닉네임 | ✅ | ❌ |
+| `user_email` | string | 사용자 이메일 | ✅ | ✅ |
+| `user_type` | string | 작성자 유형 (UserType enum) | ✅ | ✅ |
+| `title` | string | 문의 내용 (제목) | ✅ | ✅ |
+| `attachments` | array | 첨부파일 목록 | ❌ | ❌ |
+| `user_country` | string | 사용자 국적 | ✅ | ✅ |
+| `created_at` | datetime | 등록일시 | ✅ | ✅ |
+| `status` | string | 답변 상태 (InquiryStatus enum) | ✅ | ✅ |
+| `answer_content` | text | 답변 내용 | ❌ | ❌ |
+| `answerer_id` | string | 답변자 ID | ❌ | ❌ |
+| `answered_at` | datetime | 답변 일시 | ❌ | ❌ |
+
+**관계**:
+- `user_id` (외래키): 사용자 테이블 참조
+- `answerer_id` (외래키): 관리자 테이블 참조
+
+##### 2. MailGroupPage (발송 그룹) - `/mail-group`
+**테이블명**: `send_groups`
+
+| 컬럼명 | 타입 | 설명 | 정렬 가능 | 필수 |
+|--------|------|------|----------|------|
+| `id` | string | 그룹 고유 ID (PK) | ❌ | ✅ |
+| `name` | MultilingualContent | 그룹 이름 (다국어) | ❌ | ✅ |
+| `description` | MultilingualContent | 그룹 설명 (다국어) | ❌ | ❌ |
+| `nationality` | string | 국적 조건 (표시용) | ❌ | ❌ |
+| `age_range` | string | 연령 범위 조건 (표시용) | ❌ | ❌ |
+| `gender` | string | 성별 조건 (표시용) | ❌ | ❌ |
+| `user_type` | string | 가입 유형 조건 (표시용) | ❌ | ❌ |
+| `signup_method` | string | 가입 방식 조건 (표시용) | ❌ | ❌ |
+| `signup_date` | string | 가입 일자 조건 (표시용) | ❌ | ❌ |
+| `subscription_status` | string | 구독 여부 조건 (표시용) | ❌ | ❌ |
+| `activity_status` | string | 활동 여부 조건 (표시용) | ❌ | ❌ |
+| `member_count` | number | 예상 발송 인원 수 | ❌ | ✅ |
+| `query` | JSON | Query Builder 조건 (RuleGroupType) | ❌ | ✅ |
+| `created_at` | datetime | 생성 일시 | ❌ | ✅ |
+| `updated_at` | datetime | 수정 일시 | ❌ | ✅ |
+| `member_count_checked_at` | datetime | 인원 조회 일시 | ❌ | ❌ |
+
+**관계**:
+- `query` 필드는 JSON 형식으로 저장되며, `react-querybuilder`의 `RuleGroupType` 구조를 따릅니다.
+
+##### 3. MailHistoryPage (발송 이력) - `/mail-history`
+
+###### 3-1. 자동 메일 탭
+**테이블명**: `auto_mail_history`
+
+| 컬럼명 | 타입 | 설명 | 정렬 가능 | 필수 |
+|--------|------|------|----------|------|
+| `id` | string | 발송 이력 고유 ID (PK) | ❌ | ✅ |
+| `template_name` | string | 템플릿 이름 | ❌ | ✅ |
+| `group_name` | string | 그룹 이름 | ❌ | ✅ |
+| `recipient_count` | number | 수신자 수 | ❌ | ✅ |
+| `sent_count` | number | 발송 성공 수 | ❌ | ✅ |
+| `failed_count` | number | 발송 실패 수 | ❌ | ✅ |
+| `type` | string | 발송 유형 ('auto') | ❌ | ✅ |
+
+**관계**:
+- `template_id` (외래키): 템플릿 테이블 참조
+- `group_id` (외래키): 발송 그룹 테이블 참조
+- `successful_recipients` (JSON): 성공한 수신자 목록 (각 항목에 `sentAt` 포함)
+- `failed_recipients` (JSON): 실패한 수신자 목록 (각 항목에 `sentAt` 포함)
+
+###### 3-2. 수동 메일 탭
+**테이블명**: `manual_mail_history`
+
+| 컬럼명 | 타입 | 설명 | 정렬 가능 | 필수 |
+|--------|------|------|----------|------|
+| `id` | string | 발송 이력 고유 ID (PK) | ❌ | ✅ |
+| `template_name` | string | 템플릿 이름 | ❌ | ✅ |
+| `group_name` | string | 그룹 이름 | ❌ | ✅ |
+| `recipient_count` | number | 수신자 수 | ❌ | ✅ |
+| `sent_count` | number | 발송 성공 수 | ❌ | ✅ |
+| `failed_count` | number | 발송 실패 수 | ❌ | ✅ |
+| `status` | string | 발송 상태 | ❌ | ✅ |
+| `type` | string | 발송 유형 ('manual') | ❌ | ✅ |
+| `sent_date` | datetime | 발송일시 | ❌ | ✅ |
+| `sent_by` | string | 발송자 ID | ❌ | ✅ |
+
+**관계**:
+- `template_id` (외래키): 템플릿 테이블 참조
+- `group_id` (외래키): 발송 그룹 테이블 참조
+- `sent_by` (외래키): 관리자 테이블 참조
+- `successful_recipients` (JSON): 성공한 수신자 목록
+- `failed_recipients` (JSON): 실패한 수신자 목록
+
+**참고사항**:
+- 자동 메일은 시스템에서 자동으로 발송되므로 `sent_date`와 `sent_by` 컬럼이 없습니다.
+- 수동 메일은 관리자가 수동으로 발송하므로 `sent_date`와 `sent_by` 컬럼이 필요합니다.
+- 자동 메일의 경우 각 수신자마다 발송 시간이 다를 수 있으므로, `successful_recipients`와 `failed_recipients` 배열의 각 항목에 개별 `sentAt` 필드가 포함됩니다.
+
 #### Summary
+- **로딩 UI 필수**: 모든 테이블 컴포넌트에 로딩 UI 구현 필수, 데이터 로드 전에 표시
 - **Paper로 감싸기**: 항상 Paper 컴포넌트로 테이블을 감싸고 표준 스타일 적용
 - **stickyHeader**: 모든 Table에 stickyHeader 속성 사용
 - **whiteSpace: 'nowrap'**: 모든 TableCell에 적용
@@ -598,6 +772,7 @@ const styles = {
 - **noWrap**: 모든 Typography에 적용
 - **헤더 fontWeight**: 명시하지 않음 (기본 스타일)
 - **빈 데이터**: py: 8, Box로 감싸서 Typography 사용
+- **테이블 스키마 정의**: 각 페이지의 테이블 구조를 명확히 정의하여 데이터베이스 스키마 설계 시 참고
 
 ### Date Format Guidelines
 모든 날짜 표시는 **YY-MM-DD** 형식을 사용해야 합니다.
@@ -821,6 +996,7 @@ const handleContentChange = (language: 'ko' | 'en' | 'vi', value: string) => {
 
 // UI 구조
 <Tabs value={languageTab} onChange={handleLanguageTabChange}>
+  {/* 탭 라벨 (다국어 적용 필요) */}
   <Tab label="한국어" />
   <Tab label="English" />
   <Tab label="Tiếng Việt" />
@@ -830,7 +1006,7 @@ const handleContentChange = (language: 'ko' | 'en' | 'vi', value: string) => {
   <TextField
     value={content.ko}
     onChange={(e) => handleContentChange('ko', e.target.value)}
-    label="제목 (한국어)"
+    label="제목 (한국어)"  {/* 라벨 (다국어 적용 필요) */}
     fullWidth
   />
 </CustomTabPanel>
@@ -839,7 +1015,7 @@ const handleContentChange = (language: 'ko' | 'en' | 'vi', value: string) => {
   <TextField
     value={content.en}
     onChange={(e) => handleContentChange('en', e.target.value)}
-    label="Title (English)"
+    label="Title (English)"  {/* 라벨 (다국어 적용 필요) */}
     fullWidth
   />
 </CustomTabPanel>
@@ -848,7 +1024,7 @@ const handleContentChange = (language: 'ko' | 'en' | 'vi', value: string) => {
   <TextField
     value={content.vi}
     onChange={(e) => handleContentChange('vi', e.target.value)}
-    label="Tiêu đề (Tiếng Việt)"
+    label="Tiêu đề (Tiếng Việt)"  {/* 라벨 (다국어 적용 필요) */}
     fullWidth
   />
 </CustomTabPanel>
@@ -874,6 +1050,7 @@ const validateMultilingualContent = (content: MultilingualContent): boolean => {
 
 const handleSave = () => {
   if (!validateMultilingualContent(content)) {
+    // 안내 메시지 (다국어 적용 필요)
     showSnackbar('모든 언어에 대한 컨텐츠를 입력해주세요.', 'error');
     return;
   }
@@ -992,11 +1169,13 @@ export interface PageTexts {
 
 export const pageTexts: Record<string, PageTexts> = {
   autoMail: {
+    // 페이지 제목 (다국어)
     title: {
       ko: '자동 메일',
       en: 'Auto Mail',
       vi: 'Email tự động',
     },
+    // 페이지 설명 (다국어)
     description: {
       ko: '사용자에게 자동으로 발송되는 이메일 템플릿 목록입니다.',
       en: 'List of email templates that are automatically sent to users.',
@@ -1024,7 +1203,7 @@ export const getPageText = (pageKey: string, language: 'ko' | 'en' | 'vi'): { ti
 
 ```typescript
 import { useLanguage } from '../context/LanguageContext';
-import { getPageText } from '../utils/pageTexts';
+import { getPageText, getCommonText } from '../utils/pageTexts';
 
 const MyPage = () => {
   const { language } = useLanguage();
@@ -1032,14 +1211,26 @@ const MyPage = () => {
 
   return (
     <Box>
+      {/* 페이지 제목 (다국어) */}
       <Typography variant="h4" gutterBottom>
         {pageText.title}
       </Typography>
+      {/* 페이지 설명 (다국어) */}
       {pageText.description && (
         <Typography variant="subtitle1" color="text.secondary">
           {pageText.description}
         </Typography>
       )}
+      {/* 버튼 텍스트 (다국어 적용 필요) */}
+      <Button variant="contained">
+        {getCommonText('save', language)}  {/* 저장 */}
+      </Button>
+      <Button variant="outlined">
+        {getCommonText('cancel', language)}  {/* 취소 */}
+      </Button>
+      <Button variant="outlined" color="error">
+        {getCommonText('delete', language)}  {/* 삭제 */}
+      </Button>
       {/* 페이지 내용 */}
     </Box>
   );
@@ -1071,17 +1262,44 @@ export interface MailGroup {
 
 ```typescript
 import { useLanguage } from '../context/LanguageContext';
+import { getCommonText } from '../utils/pageTexts';
 
 const MyComponent = () => {
   const { language } = useLanguage();
 
   return (
+    <Box>
+      {/* 템플릿 이름 표시 (다국어) */}
     <Typography>
       {typeof content.name === 'string'
         ? content.name
         : content.name[language]
       }
     </Typography>
+
+      {/* 버튼 텍스트 (다국어 적용 필요) */}
+      <Button variant="contained">
+        {getCommonText('save', language)}  {/* 저장 */}
+      </Button>
+      <Button variant="outlined">
+        {getCommonText('edit', language)}  {/* 수정 */}
+      </Button>
+      <Button variant="outlined" color="error">
+        {getCommonText('delete', language)}  {/* 삭제 */}
+      </Button>
+
+      {/* 라벨 (다국어 적용 필요) */}
+      <TextField
+        label={getCommonText('emailAddress', language)}  {/* 이메일 주소 */}
+        placeholder={getCommonText('emailAddress', language)}  {/* 플레이스홀더 (다국어 적용 필요) */}
+        fullWidth
+      />
+
+      {/* 안내 메시지 (다국어 적용 필요) */}
+      <Alert severity="info">
+        {getCommonText('noRecipientsSelected', language)}  {/* 발송 대상이 선택되지 않았습니다. */}
+      </Alert>
+    </Box>
   );
 };
 ```
@@ -1111,6 +1329,7 @@ const migrateContent = (content: string | MultilingualContent): MultilingualCont
 export const autoMailGroups: MailGroup[] = [
   {
     id: 'member',
+    // 그룹 이름 (다국어)
     name: {
       ko: '회원',
       en: 'Member',
@@ -1119,16 +1338,19 @@ export const autoMailGroups: MailGroup[] = [
     templates: [
       {
         id: 1,
+        // 템플릿 이름 (다국어)
         name: {
           ko: '가입 환영',
           en: 'Welcome',
           vi: 'Chào mừng',
         },
+        // 이메일 제목 (다국어)
         title: {
           ko: '도토리에 오신 것을 환영합니다!',
           en: 'Welcome to Dotore!',
           vi: 'Chào mừng đến với Dotore!',
         },
+        // 템플릿 설명 (다국어)
         description: {
           ko: '신규 회원 가입 시 자동으로 발송되는 환영 메일',
           en: 'Welcome email automatically sent when a new member joins',
@@ -1187,6 +1409,7 @@ export const autoMailGroups: MailGroup[] = [
 import { useSnackbar } from '../context/SnackbarContext';
 
 const { showSnackbar } = useSnackbar();
+// 안내 메시지 (다국어 적용 필요)
 showSnackbar('Message', 'success', 5000);
 ```
 
@@ -1251,13 +1474,84 @@ showSnackbar('Message', 'success', 5000);
    };
    ```
 
+#### Snackbar Styling Guidelines
+모든 스낵바는 일관된 스타일을 유지해야 하며, 배경색이 밝을 때도 잘 보이도록 진한 색상을 사용해야 합니다.
+
+##### Color Styling
+- **모든 severity에 진한 색상 적용**: 성공, 실패, 경고, 정보 스낵바 모두 테마의 `main` 색상과 `contrastText`를 사용하여 가독성을 보장합니다
+- **배경색**: 각 severity의 `main` 색상 사용 (예: `success.main`, `error.main`, `warning.main`, `info.main`)
+- **텍스트 색상**: 각 severity의 `contrastText` 사용 (예: `success.contrastText`, `error.contrastText`)
+- **아이콘 색상**: 텍스트 색상과 동일하게 `contrastText` 사용
+
+```typescript
+<Alert
+  severity={snackbar.severity}
+  sx={{
+    width: '100%',
+    // 모든 severity에 대해 진한 색상 적용 (배경색이 밝을 때도 잘 보이도록)
+    ...(snackbar.severity === 'success' && {
+      bgcolor: 'success.main',
+      color: 'success.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'success.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'error' && {
+      bgcolor: 'error.main',
+      color: 'error.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'error.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'warning' && {
+      bgcolor: 'warning.main',
+      color: 'warning.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'warning.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'info' && {
+      bgcolor: 'info.main',
+      color: 'info.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'info.contrastText',
+      },
+    }),
+  }}
+>
+  {snackbar.message}
+</Alert>
+```
+
+##### Position Styling
+- **기본 위치**: 중앙 하단 (`anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}`)
+- **커스텀 위치 불필요**: MUI의 기본 `anchorOrigin` 속성만 사용하며, 추가적인 `sx` 스타일로 위치를 오버라이드하지 않습니다
+- **일관성 유지**: 모든 스낵바는 동일한 위치에 표시되어야 합니다
+
+```typescript
+<Snackbar
+  open={snackbar.open}
+  autoHideDuration={snackbar.duration}
+  onClose={handleClose}
+  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+>
+  {/* Alert 컴포넌트 */}
+</Snackbar>
+```
+
+##### Key Points
+- **진한 색상 필수**: 배경색이 밝을 때도 스낵바가 잘 보이도록 `main` 색상과 `contrastText` 사용
+- **모든 severity 지원**: success, error, warning, info 모두 동일한 스타일 패턴 적용
+- **중앙 하단 위치**: 기본적으로 중앙 하단에 표시되며, 별도 옵션 없이는 이 위치를 유지
+- **일관된 스타일**: 모든 스낵바는 동일한 스타일 규칙을 따름
+
 #### Status-Based Snackbar (발송 상태 스낵바)
 발송 상태와 같은 단계별 프로세스를 표시하는 스낵바는 다음과 같은 패턴을 따릅니다:
 
 - **상태 단계**: `request` → `sending` → `completed`
 - **UI 표시 위치**: 화면 우측 하단 고정
 - **로딩 애니메이션**: `sending` 상태일 때 `CircularProgress` 표시
-- **완료 후 액션**: `completed` 상태일 때 추가 액션 버튼 (예: "발송 이력 보기") 표시
+- **완료 후 액션**: `completed` 상태일 때 추가 액션 버튼 (예: "발송 이력 보기") 표시 (버튼 텍스트는 다국어 적용 필요)
 
 #### Key Points
 - **Provider 위치**: Router 내부에 배치하여 Router 컨텍스트 접근 가능
@@ -1272,6 +1566,8 @@ showSnackbar('Message', 'success', 5000);
 - **지속성**: 페이지 전환 후에도 계속 표시
 - **Router 내부**: Provider는 Router 내부에 배치
 - **상태 기반**: 단계별 상태에 따른 UI 변경 지원
+- **스타일 일관성**: 모든 severity(success, error, warning, info)에 진한 색상 적용
+- **위치 고정**: 기본적으로 중앙 하단에 표시 (`anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}`)
 
 ### Navigation
 ```typescript

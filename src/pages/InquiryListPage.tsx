@@ -36,6 +36,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import InquiryDetailModal from '../components/InquiryDetailModal';
 import { useLanguage } from '../context/LanguageContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { mockInquiries } from '../data/mockData';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { getCommonText, getPageText } from '../utils/pageTexts';
@@ -128,8 +129,7 @@ const InquiryListPage = () => {
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const { showSnackbar } = useSnackbar();
 
   // 상세 검색 팝오버 상태
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
@@ -563,8 +563,7 @@ const InquiryListPage = () => {
   };
 
   const handleAnswerSubmitSuccess = () => {
-    setSnackbarMessage('답변이 성공적으로 등록되었습니다.');
-    setSnackbarOpen(true);
+    showSnackbar('답변이 성공적으로 등록되었습니다.', 'success');
   };
 
   const formatDate = (dateString: string) => {
@@ -627,12 +626,7 @@ const InquiryListPage = () => {
   const handleCopyEmail = (email: string, e: React.MouseEvent) => {
     e.stopPropagation(); // 행 클릭 이벤트 전파 방지
     navigator.clipboard.writeText(email);
-    setSnackbarMessage('이메일이 클립보드에 복사되었습니다.');
-    setSnackbarOpen(true);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+    showSnackbar('이메일이 클립보드에 복사되었습니다.', 'info');
   };
 
   const handleSearch = () => {
@@ -1283,24 +1277,6 @@ const InquiryListPage = () => {
           onAnswerSubmitSuccess={handleAnswerSubmitSuccess}
         />
       )}
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={5000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        message={snackbarMessage}
-        action={
-          <IconButton
-            size="small"
-            aria-label="close"
-            color="inherit"
-            onClick={handleCloseSnackbar}
-          >
-            <Close fontSize="small" />
-          </IconButton>
-        }
-      />
 
       <Zoom in={trigger}>
         <Box

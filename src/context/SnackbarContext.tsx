@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Alert, AlertColor, Snackbar } from '@mui/material';
+import { AlertColor } from '@mui/material';
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import GlobalSnackbar from '../components/GlobalSnackbar';
 
 interface SnackbarState {
   open: boolean;
@@ -35,7 +36,7 @@ export const SnackbarProvider = ({ children }: { children: React.ReactNode }) =>
       open: true,
       message,
       severity,
-      duration,
+      duration: duration > 0 ? duration : 5000,
     });
   }, []);
 
@@ -46,16 +47,13 @@ export const SnackbarProvider = ({ children }: { children: React.ReactNode }) =>
   return (
     <SnackbarContext.Provider value={{ showSnackbar }}>
       {children}
-      <Snackbar
+      <GlobalSnackbar
         open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
         autoHideDuration={snackbar.duration}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleClose} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </SnackbarContext.Provider>
   );
 };

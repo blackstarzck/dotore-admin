@@ -1,16 +1,16 @@
 import { ArrowForward, Close } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
   Fade,
   IconButton,
-  Snackbar,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { SendingStatistics } from '../context/SendingStatusContext';
+import GlobalSnackbar from './GlobalSnackbar';
 
 export type SendingStatus = 'request' | 'sending' | 'completed' | 'failed' | null;
 
@@ -30,6 +30,7 @@ const SendingStatusSnackbar = ({
   onClose,
 }: SendingStatusSnackbarProps) => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   if (!status) return null;
 
@@ -97,42 +98,37 @@ const SendingStatusSnackbar = ({
   };
 
   return (
-    <Snackbar
+    <GlobalSnackbar
       open={open}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       TransitionComponent={Fade}
       TransitionProps={transitionProps}
-    >
-      <Alert
-        severity={severity}
-        icon={
-          icon ? (
-            <Fade in={true} timeout={300}>
-              <Box component="span">{icon}</Box>
-            </Fade>
-          ) : undefined
-        }
-        action={
+      severity={severity}
+      alertIcon={
+        icon ? (
           <Fade in={true} timeout={300}>
-            <IconButton
-              size="small"
-              onClick={handleClose}
-              color="inherit"
-              sx={{
-                opacity: 0.7,
-                '&:hover': {
-                  opacity: 1,
-                },
-              }}
-            >
-              <Close fontSize="small" />
-            </IconButton>
+            <Box component="span">{icon}</Box>
           </Fade>
-        }
-        sx={{
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
+        ) : undefined
+      }
+      alertAction={
+        <Fade in={true} timeout={300}>
+          <IconButton
+            size="small"
+            onClick={handleClose}
+            color="inherit"
+            sx={{
+              opacity: 0.7,
+              '&:hover': {
+                opacity: 1,
+              },
+            }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </Fade>
+      }
+      message={
         <Fade in={true} timeout={300}>
           <Box>
             <Typography
@@ -152,7 +148,7 @@ const SendingStatusSnackbar = ({
                     sx={{
                       mt: 2,
                       fontSize: '0.875rem',
-                      color: 'text.secondary',
+                      color: theme.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
@@ -190,7 +186,7 @@ const SendingStatusSnackbar = ({
                   sx={{
                     mt: 2,
                     fontSize: '0.875rem',
-                    color: 'text.secondary',
+                    color: theme.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
@@ -200,8 +196,8 @@ const SendingStatusSnackbar = ({
             )}
           </Box>
         </Fade>
-      </Alert>
-    </Snackbar>
+      }
+    />
   );
 };
 

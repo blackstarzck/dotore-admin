@@ -1,4 +1,4 @@
-import { Add, Clear, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
+import { Add, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -24,7 +24,6 @@ import {
   SelectChangeEvent,
   Snackbar,
   Switch,
-  Tab, Tabs,
   TextField,
   Tooltip,
   Typography,
@@ -40,46 +39,11 @@ import { MultilingualContent } from '../types/multilingual';
 import { getCommonText, getPageText } from '../utils/pageTexts';
 import { getAutoMailGroups, getAutoSendSetting, getTemplate, saveAutoMailGroups, saveAutoSendSetting, saveTemplate } from '../utils/storage';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`auto-mail-tabpanel-${index}`}
-      aria-labelledby={`auto-mail-tab-${index}`}
-      {...other}
-    >
-      <Box sx={{ p: 0 }}>{children}</Box>
-    </div>
-  );
-}
-
 const AutoMailPage = () => {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { showSnackbar } = useSnackbar();
 
-  // 언어에 따라 탭 인덱스 매핑: ko -> 0, en -> 1, vi -> 2
-  const getLanguageTabIndex = (lang: 'ko' | 'en' | 'vi'): number => {
-    switch (lang) {
-      case 'ko':
-        return 0;
-      case 'en':
-        return 1;
-      case 'vi':
-        return 2;
-      default:
-        return 0;
-    }
-  };
   // localStorage에서 저장된 그룹 불러오기, 없으면 초기 더미데이터 사용
   const storedGroups = getAutoMailGroups();
   const [autoMailGroups, setAutoMailGroups] = useState<MailGroup[]>(
@@ -89,16 +53,13 @@ const AutoMailPage = () => {
   const [previewTemplate, setPreviewTemplate] = useState<MailTemplate | null>(null);
   const [previewContent, setPreviewContent] = useState<string>('');
   const [autoSendSettings, setAutoSendSettings] = useState<Record<string, boolean>>({});
-  const [snackbars, setSnackbars] = useState<
-    Array<{ id: string; message: string; severity: 'success' | 'info' }>
-  >([]);
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [_testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [newTemplateDialogOpen, setNewTemplateDialogOpen] = useState(false);
+  const [newGroupDialogOpen, setNewGroupDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [languageTab, setLanguageTab] = useState<number>(getLanguageTabIndex(language));
   const [newTemplateName, setNewTemplateName] = useState<MultilingualContent>({
     ko: '',
     en: '',
@@ -114,16 +75,9 @@ const AutoMailPage = () => {
     en: '',
     vi: '',
   });
+  const [newGroupName, setNewGroupName] = useState<string>('');
   const [templateNameError, setTemplateNameError] = useState('');
-  const prevLanguageRef = useRef<'ko' | 'en' | 'vi'>(language);
-
-  // GNB에서 언어가 변경되면 탭도 자동으로 변경
-  useEffect(() => {
-    if (prevLanguageRef.current !== language) {
-      setLanguageTab(getLanguageTabIndex(language));
-      prevLanguageRef.current = language;
-    }
-  }, [language]);
+  const [groupNameError, setGroupNameError] = useState('');
 
   // 자동 발송 설정 불러오기
   useEffect(() => {
@@ -196,18 +150,8 @@ const AutoMailPage = () => {
     // 스낵바 메시지 추가
     const message = `${templateName}의 자동 발송이 ${newValue ? '활성화' : '비활성화'}되었습니다.`;
     const severity: 'success' | 'info' = newValue ? 'success' : 'info';
-    const id = `${Date.now()}-${Math.random()}`;
 
-    setSnackbars((prev) => [...prev, { id, message, severity }]);
-
-    // 3초 후 자동으로 제거
-    setTimeout(() => {
-      setSnackbars((prev) => prev.filter((snackbar) => snackbar.id !== id));
-    }, 3000);
-  };
-
-  const handleCloseSnackbar = (id: string) => {
-    setSnackbars((prev) => prev.filter((snackbar) => snackbar.id !== id));
+    showSnackbar(message, severity, 3000);
   };
 
   const handleNewTemplate = () => {
@@ -298,7 +242,7 @@ const AutoMailPage = () => {
     };
 
     if (!validateMultilingualName(newTemplateName)) {
-      setTemplateNameError('모든 언어에 대한 템플릿 이름을 입력해주세요.');
+      setTemplateNameError('템플릿 이름을 입력해주세요.');
       return;
     }
 
@@ -335,7 +279,7 @@ const AutoMailPage = () => {
     };
 
     if (!validateMultilingualTitle(newTemplateTitle)) {
-      showSnackbar('모든 언어에 대한 이메일 제목을 입력해주세요.', 'error', 3000);
+      showSnackbar('이메일 제목을 입력해주세요.', 'error', 3000);
       return;
     }
 
@@ -407,6 +351,47 @@ const AutoMailPage = () => {
     }
 
     handleCloseNewTemplate();
+  };
+
+  const handleCloseNewGroup = () => {
+    setNewGroupDialogOpen(false);
+    setNewGroupName('');
+    setGroupNameError('');
+  };
+
+  const handleSaveNewGroup = () => {
+    if (!newGroupName.trim()) {
+      setGroupNameError('그룹 이름을 입력해주세요.');
+      return;
+    }
+
+    const isDuplicate = autoMailGroups.some((group) => {
+      const existingName = typeof group.name === 'string' ? group.name : group.name.ko;
+      return existingName.toLowerCase() === newGroupName.trim().toLowerCase();
+    });
+
+    if (isDuplicate) {
+      setGroupNameError('이미 존재하는 그룹 이름입니다.');
+      return;
+    }
+
+    const newGroup: MailGroup = {
+      id: `group-${Date.now()}`,
+      name: {
+        ko: newGroupName,
+        en: newGroupName,
+        vi: newGroupName,
+      },
+      templates: [],
+    };
+
+    const updatedGroups = [...autoMailGroups, newGroup];
+    setAutoMailGroups(updatedGroups);
+    saveAutoMailGroups(updatedGroups as any);
+
+    setSelectedGroupId(newGroup.id);
+    showSnackbar('새 그룹이 추가되었습니다.', 'success', 3000);
+    handleCloseNewGroup();
   };
 
   const handleTestSendClick = (e: React.MouseEvent, template: MailTemplate, groupId: string) => {
@@ -742,185 +727,78 @@ const AutoMailPage = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <Tabs value={languageTab} onChange={(_e, newValue) => setLanguageTab(newValue)} sx={{ mb: 2 }}>
-              <Tab label="한국어" />
-              <Tab label="English" />
-              <Tab label="Tiếng Việt" />
-            </Tabs>
-            <CustomTabPanel value={languageTab} index={0}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="template-group-label-ko">템플릿 그룹</InputLabel>
-                <Select
-                  labelId="template-group-label-ko"
-                  id="template-group-ko"
-                  value={selectedGroupId}
-                  label="템플릿 그룹"
-                  disabled={!!editingTemplate}
-                  onChange={(e: SelectChangeEvent<string>) => {
-                    setSelectedGroupId(e.target.value);
-                    if (templateNameError) {
-                      setTemplateNameError('');
-                    }
-                  }}
-                >
-                  {autoMailGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {typeof group.name === 'string' ? group.name : group.name.ko}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                label="템플릿 이름"
-                value={newTemplateName.ko}
-                onChange={(e) => {
-                  setNewTemplateName((prev) => ({ ...prev, ko: e.target.value }));
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="template-group-label">템플릿 그룹</InputLabel>
+              <Select
+                labelId="template-group-label"
+                id="template-group"
+                value={selectedGroupId}
+                label="템플릿 그룹"
+                onChange={(e: SelectChangeEvent<string>) => {
+                  const value = e.target.value;
+                  if (value === 'add_new_group') {
+                    setNewGroupDialogOpen(true);
+                    return;
+                  }
+                  setSelectedGroupId(value);
                   if (templateNameError) {
                     setTemplateNameError('');
                   }
                 }}
-                placeholder="템플릿 이름을 입력하세요 (한국어)"
-                variant="outlined"
-                error={!!templateNameError}
-                helperText={templateNameError}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="이메일 제목"
-                value={newTemplateTitle.ko}
-                onChange={(e) => setNewTemplateTitle((prev) => ({ ...prev, ko: e.target.value }))}
-                placeholder="이메일 제목을 입력하세요 (한국어)"
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="템플릿 설명 (선택사항)"
-                multiline
-                rows={3}
-                value={newTemplateDescription.ko}
-                onChange={(e) => setNewTemplateDescription((prev) => ({ ...prev, ko: e.target.value }))}
-                variant="outlined"
-              />
-            </CustomTabPanel>
-            <CustomTabPanel value={languageTab} index={1}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="template-group-label-en">Template Group</InputLabel>
-                <Select
-                  labelId="template-group-label-en"
-                  id="template-group-en"
-                  value={selectedGroupId}
-                  label="Template Group"
-                  disabled={!!editingTemplate}
-                  onChange={(e: SelectChangeEvent<string>) => {
-                    setSelectedGroupId(e.target.value);
-                    if (templateNameError) {
-                      setTemplateNameError('');
-                    }
-                  }}
-                >
-                  {autoMailGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {typeof group.name === 'string' ? group.name : group.name.en}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                label="Template Name"
-                value={newTemplateName.en}
-                onChange={(e) => {
-                  setNewTemplateName((prev) => ({ ...prev, en: e.target.value }));
-                  if (templateNameError) {
-                    setTemplateNameError('');
-                  }
-                }}
-                placeholder="Enter template name (English)"
-                variant="outlined"
-                error={!!templateNameError}
-                helperText={templateNameError}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Email Subject"
-                value={newTemplateTitle.en}
-                onChange={(e) => setNewTemplateTitle((prev) => ({ ...prev, en: e.target.value }))}
-                placeholder="Enter email subject (English)"
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Template Description (Optional)"
-                multiline
-                rows={3}
-                value={newTemplateDescription.en}
-                onChange={(e) => setNewTemplateDescription((prev) => ({ ...prev, en: e.target.value }))}
-                variant="outlined"
-              />
-            </CustomTabPanel>
-            <CustomTabPanel value={languageTab} index={2}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="template-group-label-vi">Nhóm mẫu</InputLabel>
-                <Select
-                  labelId="template-group-label-vi"
-                  id="template-group-vi"
-                  value={selectedGroupId}
-                  label="Nhóm mẫu"
-                  disabled={!!editingTemplate}
-                  onChange={(e: SelectChangeEvent<string>) => {
-                    setSelectedGroupId(e.target.value);
-                    if (templateNameError) {
-                      setTemplateNameError('');
-                    }
-                  }}
-                >
-                  {autoMailGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {typeof group.name === 'string' ? group.name : group.name.vi}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                label="Tên mẫu"
-                value={newTemplateName.vi}
-                onChange={(e) => {
-                  setNewTemplateName((prev) => ({ ...prev, vi: e.target.value }));
-                  if (templateNameError) {
-                    setTemplateNameError('');
-                  }
-                }}
-                placeholder="Nhập tên mẫu (Tiếng Việt)"
-                variant="outlined"
-                error={!!templateNameError}
-                helperText={templateNameError}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Tiêu đề email"
-                value={newTemplateTitle.vi}
-                onChange={(e) => setNewTemplateTitle((prev) => ({ ...prev, vi: e.target.value }))}
-                placeholder="Nhập tiêu đề email (Tiếng Việt)"
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Mô tả mẫu (Tùy chọn)"
-                multiline
-                rows={3}
-                value={newTemplateDescription.vi}
-                onChange={(e) => setNewTemplateDescription((prev) => ({ ...prev, vi: e.target.value }))}
-                variant="outlined"
-              />
-            </CustomTabPanel>
+              >
+                {autoMailGroups.map((group) => (
+                  <MenuItem key={group.id} value={group.id}>
+                    {typeof group.name === 'string' ? group.name : group.name.ko}
+                  </MenuItem>
+                ))}
+                <Divider />
+                <MenuItem value="add_new_group" disabled={!!editingTemplate} sx={{ color: 'primary.main', fontWeight: 600 }}>
+                  <Add sx={{ mr: 1, fontSize: 20 }} />
+                  그룹 추가하기
+                </MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="템플릿 이름"
+              value={newTemplateName.ko}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewTemplateName({ ko: value, en: value, vi: value });
+                if (templateNameError) {
+                  setTemplateNameError('');
+                }
+              }}
+              placeholder="템플릿 이름을 입력하세요"
+              variant="outlined"
+              error={!!templateNameError}
+              helperText={templateNameError}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="이메일 제목"
+              value={newTemplateTitle.ko}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewTemplateTitle({ ko: value, en: value, vi: value });
+              }}
+              placeholder="이메일 제목을 입력하세요"
+              variant="outlined"
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="템플릿 설명 (선택사항)"
+              multiline
+              rows={3}
+              value={newTemplateDescription.ko}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewTemplateDescription({ ko: value, en: value, vi: value });
+              }}
+              variant="outlined"
+            />
           </Box>
         </DialogContent>
         <DialogActions>
@@ -931,27 +809,38 @@ const AutoMailPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 쌓이는 스낵바 */}
-      {snackbars.map((snackbar, index) => (
-        <Snackbar
-          key={snackbar.id}
-          open={true}
-          autoHideDuration={3000}
-          onClose={() => handleCloseSnackbar(snackbar.id)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          sx={{
-            bottom: `${24 + index * 56}px !important`, // 각 스낵바를 위로 쌓기
-          }}
-        >
-          <Alert
-            onClose={() => handleCloseSnackbar(snackbar.id)}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      ))}
+      {/* 새 그룹 추가 다이얼로그 */}
+      <Dialog open={newGroupDialogOpen} onClose={handleCloseNewGroup} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography variant="h5" fontWeight="bold" component="div">
+            새 그룹 추가
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              autoFocus
+              fullWidth
+              label="그룹 이름"
+              value={newGroupName}
+              onChange={(e) => {
+                setNewGroupName(e.target.value);
+                setGroupNameError('');
+              }}
+              placeholder="그룹 이름을 입력하세요"
+              variant="outlined"
+              error={!!groupNameError}
+              helperText={groupNameError}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseNewGroup}>{getCommonText('cancel', language)}</Button>
+          <Button onClick={handleSaveNewGroup} variant="contained">
+            {getCommonText('save', language)}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 위로 올라가는 플로팅 버튼 */}
       <Zoom in={trigger}>

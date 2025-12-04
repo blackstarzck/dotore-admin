@@ -1,22 +1,21 @@
 import { Close, ContentCopy, Download } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    IconButton,
-    Snackbar,
-    Tooltip,
-    Typography,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { Inquiry, InquiryCategory, InquiryStatus, UserType } from '../types/inquiry';
 import { getCommonText } from '../utils/pageTexts';
 
@@ -90,13 +89,10 @@ const InquiryDetailModal = ({
   onAnswerSubmitSuccess,
 }: InquiryDetailModalProps) => {
   const { language } = useLanguage();
+  const { showSnackbar } = useSnackbar();
   const [answer, setAnswer] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
   const quillInstance = useRef<Quill | null>(null);
-
-  // Snackbar 상태 추가
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     // Dialog가 열리고 Pending 상태일 때만 초기화
@@ -205,20 +201,14 @@ const InquiryDetailModal = ({
       // 모달 닫기
       onClose();
     } else {
-      setSnackbarMessage('답변 내용을 입력해주세요.');
-      setSnackbarOpen(true);
+      showSnackbar('답변 내용을 입력해주세요.', 'warning');
     }
   };
 
   // 이메일 복사 핸들러
   const handleCopyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
-    setSnackbarMessage('이메일이 클립보드에 복사되었습니다.');
-    setSnackbarOpen(true);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+    showSnackbar('이메일이 클립보드에 복사되었습니다.', 'info');
   };
 
   return (
@@ -438,18 +428,6 @@ const InquiryDetailModal = ({
         )}
       </DialogActions>
     </Dialog>
-
-    <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={5000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        sx={{ zIndex: 1400 }}
-    >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
-            {snackbarMessage}
-        </Alert>
-    </Snackbar>
     </>
   );
 };

@@ -101,6 +101,11 @@ export const commonTexts: Record<string, MultilingualContent> = {
     en: 'Save',
     vi: 'Lưu',
   },
+  saveTemplate: {
+    ko: '템플릿 저장',
+    en: 'Save Template',
+    vi: 'Lưu mẫu',
+  },
   edit: {
     ko: '수정',
     en: 'Edit',

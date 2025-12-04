@@ -3,10 +3,12 @@ import LoginPage from './pages/LoginPage';
 import InquiryListPage from './pages/InquiryListPage';
 import InquiryAnalysisPage from './pages/InquiryAnalysisPage';
 import AutoMailPage from './pages/AutoMailPage';
+import AutoMailTemplatePage from './pages/AutoMailTemplatePage';
 import ManualMailPage from './pages/ManualMailPage';
-import MailTemplatePage from './pages/MailTemplatePage';
+import ManualMailTemplatePage from './pages/ManualMailTemplatePage';
 import MailGroupPage from './pages/MailGroupPage';
 import MailHistoryPage from './pages/MailHistoryPage';
+import MemberManagementPage from './pages/MemberManagementPage';
 import Layout from './components/Layout';
 import { getAuthToken } from './utils/storage';
 import { ColorModeProvider } from './context/ColorModeContext';
@@ -77,11 +79,12 @@ function App() {
                     <Route index element={<InquiryListPage />} />
                     <Route path="analysis" element={<InquiryAnalysisPage />} />
                     <Route path="auto-mail" element={<AutoMailPage />} />
-                    <Route path="auto-mail/:groupId/:templateId" element={<MailTemplatePage />} />
+                    <Route path="auto-mail/:groupId/:templateId" element={<AutoMailTemplatePage />} />
                     <Route path="manual-mail" element={<ManualMailPage />} />
-                    <Route path="manual-mail/:groupId/:templateId" element={<MailTemplatePage />} />
+                    <Route path="manual-mail/:groupId/:templateId" element={<ManualMailTemplatePage />} />
                     <Route path="mail-group" element={<MailGroupPage />} />
                     <Route path="mail-history" element={<MailHistoryPage />} />
+                    <Route path="member" element={<MemberManagementPage />} />
                   </Route>
                 </Routes>
               </SendingStatusProvider>
