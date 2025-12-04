@@ -1,4 +1,4 @@
-import { Add, DeleteOutlined, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
+import { Add, Clear, DeleteOutlined, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
 import {
   Box,
   Button,
