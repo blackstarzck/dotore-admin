@@ -2,6 +2,7 @@ import { Add, Clear, DeleteOutlined, EditOutlined, KeyboardArrowUp, Preview, Sen
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
@@ -10,6 +11,7 @@ import {
   Divider,
   Fab,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -27,11 +29,12 @@ import {
   useScrollTrigger,
   Zoom,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { manualMailGroups as initialManualMailGroups, MailGroup, MailTemplate } from '../data/mockMailData';
+import { mockSendGroups } from '../data/mockSendGroups';
 import { MultilingualContent } from '../types/multilingual';
 import { getCommonText, getPageText } from '../utils/pageTexts';
 import { getManualMailGroups, getSendGroups, getTemplate, saveManualMailGroups, saveTemplate } from '../utils/storage';
@@ -51,7 +54,8 @@ const ManualMailPage = () => {
   const [previewContent, setPreviewContent] = useState<string>('');
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
-  const [_testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
+  const [testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
+  const [selectedNationalities, setSelectedNationalities] = useState<string[]>([]); // 나에게 보내기 모달에서 선택된 국적
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<{ template: MailTemplate; groupId: string } | null>(null);
   const [newTemplateDialogOpen, setNewTemplateDialogOpen] = useState(false);
@@ -372,16 +376,74 @@ const ManualMailPage = () => {
     handleCloseNewGroup();
   };
 
+  // 국적 라벨
+  const nationalityLabels: Record<string, string> = {
+    KR: '한국',
+    US: '미국',
+    VN: '베트남',
+  };
+
+  // 발송 그룹 목록 (발송 그룹 관리 데이터와 동기화)
+  const sendGroups = mockSendGroups;
+
+  // 템플릿이 속한 그룹의 국적 추출
+  const availableNationalities = useMemo(() => {
+    if (!testSendTemplate) {
+      return [];
+    }
+
+    const matchedSendGroup = sendGroups.find((sg) => sg.id === testSendTemplate.groupId);
+
+    if (!matchedSendGroup || !matchedSendGroup.query?.rules) {
+      return [];
+    }
+
+    const nationalitiesSet = new Set<string>();
+
+    matchedSendGroup.query.rules.forEach((rule: any) => {
+      if (rule.field === 'userCountry') {
+        if (rule.operator === '=') {
+          // 단일 값
+          nationalitiesSet.add(rule.value);
+        } else if (rule.operator === 'in') {
+          // 여러 값 (문자열 또는 배열)
+          if (typeof rule.value === 'string') {
+            rule.value.split(',').forEach((v: string) => {
+              const trimmed = v.trim();
+              if (trimmed) nationalitiesSet.add(trimmed);
+            });
+          } else if (Array.isArray(rule.value)) {
+            rule.value.forEach((v: string) => {
+              if (v) nationalitiesSet.add(v);
+            });
+          }
+        }
+      }
+    });
+
+    // KR, US, VN 순서로 정렬
+    const ordered = ['KR', 'US', 'VN'];
+    return ordered.filter((nat) => nationalitiesSet.has(nat));
+  }, [testSendTemplate, sendGroups]);
+
   const handleTestSendClick = (e: React.MouseEvent, template: MailTemplate, groupId: string) => {
     e.stopPropagation();
     setTestSendTemplate({ template, groupId });
     setTestSendDialogOpen(true);
   };
 
+  // testSendTemplate이 변경되고 모달이 열릴 때 선택된 국적 초기화
+  useEffect(() => {
+    if (testSendDialogOpen && testSendTemplate && availableNationalities.length > 0) {
+      setSelectedNationalities([...availableNationalities]);
+    }
+  }, [testSendDialogOpen, testSendTemplate, availableNationalities]);
+
   const handleCloseTestSend = () => {
     setTestSendDialogOpen(false);
     setTestEmail('');
     setTestSendTemplate(null);
+    setSelectedNationalities([]);
   };
 
   const handleDeleteTemplateClick = (e: React.MouseEvent, template: MailTemplate, groupId: string) => {
@@ -628,7 +690,11 @@ const ManualMailPage = () => {
       {/* 나에게 보내기 다이얼로그 */}
       <Dialog
         open={testSendDialogOpen}
-        onClose={handleCloseTestSend}
+        onClose={() => {
+          setTestSendDialogOpen(false);
+          setTestEmail('');
+          setSelectedNationalities([]);
+        }}
         slotProps={{
           paper: {
             component: 'form',
@@ -639,7 +705,6 @@ const ManualMailPage = () => {
               const email = formJson.email as string;
 
               if (email) {
-                // 테스트 발송 로직 (임시로 스낵바만 표시)
                 showSnackbar(
                   getCommonText('testEmailSent', language).replace('{email}', email),
                   'success',
@@ -647,7 +712,7 @@ const ManualMailPage = () => {
                 );
                 setTestSendDialogOpen(false);
                 setTestEmail('');
-                setTestSendTemplate(null);
+                setSelectedNationalities([]);
               }
             },
           },
@@ -733,10 +798,61 @@ const ManualMailPage = () => {
               ),
             }}
           />
+          {/* 선택된 그룹의 국적별 정보 체크박스 */}
+          {availableNationalities.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                발송할 국적 선택
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1.5 }}>
+                {/* 전체 체크박스 */}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={
+                        availableNationalities.length > 0 &&
+                        availableNationalities.every((nat) => selectedNationalities.includes(nat))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedNationalities([...availableNationalities]);
+                        } else {
+                          setSelectedNationalities([]);
+                        }
+                      }}
+                    />
+                  }
+                  label="전체"
+                />
+                {availableNationalities.map((nationality) => (
+                  <FormControlLabel
+                    key={nationality}
+                    control={
+                      <Checkbox
+                        checked={selectedNationalities.includes(nationality)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedNationalities((prev) => [...prev, nationality]);
+                          } else {
+                            setSelectedNationalities((prev) => prev.filter((n) => n !== nationality));
+                          }
+                        }}
+                      />
+                    }
+                    label={nationalityLabels[nationality]}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseTestSend}>{getCommonText('cancel', language)}</Button>
-          <Button type="submit">{getCommonText('send', language)}</Button>
+          <Button
+            type="submit"
+            disabled={!testEmail.trim() || selectedNationalities.length === 0}
+          >
+            {getCommonText('send', language)}
+          </Button>
         </DialogActions>
       </Dialog>
 
