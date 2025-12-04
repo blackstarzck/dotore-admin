@@ -729,53 +729,6 @@ const ManualMailTemplatePage = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 3 }}>
-        {(() => {
-          const saveValidation = validateForSave();
-          const saveButton = (
-            <Button
-              variant="outlined"
-              onClick={handleSave}
-              disabled={!saveValidation.isValid}
-            >
-              {getCommonText('saveTemplate', language)}
-            </Button>
-          );
-
-          if (saveValidation.isValid) {
-            return saveButton;
-          }
-
-          return (
-            <Tooltip title={saveValidation.errorMessage || '템플릿을 저장할 수 없습니다.'} arrow>
-              <span style={{ display: 'inline-block' }}>{saveButton}</span>
-            </Tooltip>
-          );
-        })()}
-
-        {(() => {
-          const testSendValidation = validateForTestSend();
-          const testSendButton = (
-            <Button
-              variant="outlined"
-              onClick={handleTestSend}
-              disabled={!testSendValidation.isValid}
-            >
-              {getCommonText('sendToMe', language)}
-            </Button>
-          );
-
-          if (testSendValidation.isValid) {
-            return testSendButton;
-          }
-
-          return (
-            <Tooltip title={testSendValidation.errorMessage || '나에게 보낼 수 없습니다.'} arrow>
-              <span style={{ display: 'inline-block' }}>{testSendButton}</span>
-            </Tooltip>
-          );
-        })()}
-      </Box>
       {/* 발송 대상 및 국적 탭 (Paper 컴포넌트) */}
       <Paper
         sx={{
@@ -905,6 +858,52 @@ const ManualMailTemplatePage = () => {
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+        {(() => {
+          const saveValidation = validateForSave();
+          const saveButton = (
+            <Button
+              variant="outlined"
+              onClick={handleSave}
+              disabled={!saveValidation.isValid}
+            >
+              {getCommonText('saveTemplate', language)}
+            </Button>
+          );
+
+          if (saveValidation.isValid) {
+            return saveButton;
+          }
+
+          return (
+            <Tooltip title={saveValidation.errorMessage || '템플릿을 저장할 수 없습니다.'} arrow>
+              <span style={{ display: 'inline-block' }}>{saveButton}</span>
+            </Tooltip>
+          );
+        })()}
+
+        {(() => {
+          const testSendValidation = validateForTestSend();
+          const testSendButton = (
+            <Button
+              variant="outlined"
+              onClick={handleTestSend}
+              disabled={!testSendValidation.isValid}
+            >
+              {getCommonText('sendToMe', language)}
+            </Button>
+          );
+
+          if (testSendValidation.isValid) {
+            return testSendButton;
+          }
+
+          return (
+            <Tooltip title={testSendValidation.errorMessage || '나에게 보낼 수 없습니다.'} arrow>
+              <span style={{ display: 'inline-block' }}>{testSendButton}</span>
+            </Tooltip>
+          );
+        })()}
+
         {(() => {
           const sendValidation = validateForSend();
           const sendButton = (
