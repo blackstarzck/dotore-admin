@@ -1,6 +1,5 @@
-import { Add, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
+import { Add, Clear, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -22,15 +21,14 @@ import {
   Paper,
   Select,
   SelectChangeEvent,
-  Snackbar,
   Switch,
   TextField,
   Tooltip,
   Typography,
   useScrollTrigger,
-  Zoom,
+  Zoom
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useSnackbar } from '../context/SnackbarContext';
