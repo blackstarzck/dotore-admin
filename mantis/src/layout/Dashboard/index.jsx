@@ -1,16 +1,16 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project imports
-import Drawer from './Drawer';
-import Header from './Header';
-import Footer from './Footer';
-import Loader from 'components/Loader';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
+import Loader from 'components/Loader';
+import Drawer from './Drawer';
+import Footer from './Footer';
+import Header from './Header';
 
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 

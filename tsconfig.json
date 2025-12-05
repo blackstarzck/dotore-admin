@@ -13,6 +13,20 @@
     "moduleDetection": "force",
     "noEmit": true,
 
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "components/*": ["src/components/*"],
+      "context/*": ["src/context/*"],
+      "pages/*": ["src/pages/*"],
+      "layout/*": ["src/layout/*"],
+      "utils/*": ["src/utils/*"],
+      "types/*": ["src/types/*"],
+      "data/*": ["src/data/*"],
+      "themes/*": ["src/themes/*"],
+      "menu-items/*": ["src/menu-items/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,

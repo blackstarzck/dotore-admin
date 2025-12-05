@@ -127,6 +127,8 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             />
           )}
         </ListItemButton>
+
+        
         {(drawerOpen || (!drawerOpen && level !== 1)) &&
           item?.actions &&
           item?.actions.map((action, index) => {

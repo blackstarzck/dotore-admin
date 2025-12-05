@@ -1,0 +1,400 @@
+---
+alwaysApply: true
+---
+
+# Common Patterns
+
+## Snackbar Usage
+```typescript
+import { useSnackbar } from '../context/SnackbarContext';
+
+const { showSnackbar } = useSnackbar();
+// 안내 메시지 (다국어 적용 필요)
+showSnackbar('Message', 'success', 5000);
+```
+
+## Snackbar Design Guidelines
+스낵바 컴포넌트는 어떤 페이지에 종속되어서는 안 되며, 페이지 전환 후에도 계속 노출되어야 합니다.
+
+### Global Snackbar Rules
+- **페이지 독립성**: 스낵바 컴포넌트는 특정 페이지 컴포넌트 내부에 배치하지 않습니다
+- **전역 관리**: Context API를 사용하여 전역 상태로 관리합니다
+- **페이지 전환 지속성**: 페이지가 전환되어도 스낵바는 계속 표시되어야 합니다
+- **Router 내부 배치**: Provider는 Router 내부에 배치하여 `useNavigate` 사용이 가능하도록 합니다
+
+### Implementation Pattern
+1. **Context API를 사용한 전역 스낵바 관리**
+   ```typescript
+   // src/context/SendingStatusContext.tsx
+   export const SendingStatusProvider = ({ children }: { children: React.ReactNode }) => {
+     const [status, setStatus] = useState<SendingStatus>(null);
+     const [open, setOpen] = useState(false);
+
+     // 상태 관리 로직...
+
+     return (
+       <SendingStatusContext.Provider value={{ showSendingStatus, updateSendingStatus, closeSendingStatus }}>
+         {children}
+         <SendingStatusSnackbar
+           open={open}
+           status={status}
+           onClose={closeSendingStatus}
+         />
+       </SendingStatusContext.Provider>
+     );
+   };
+   ```
+
+2. **App.tsx에 Provider 배치**
+   ```typescript
+   // Router 내부에 Provider 배치 (useNavigate 사용을 위해)
+   <Router>
+     <SendingStatusProvider>
+       <Routes>
+         {/* routes */}
+       </Routes>
+     </SendingStatusProvider>
+   </Router>
+   ```
+
+3. **페이지에서 Context 사용**
+   ```typescript
+   // 페이지 컴포넌트 내부
+   import { useSendingStatus } from '../context/SendingStatusContext';
+
+   const { showSendingStatus, updateSendingStatus } = useSendingStatus();
+
+   const handleSend = async () => {
+     showSendingStatus();
+     updateSendingStatus('request');
+     // ... 로직
+     updateSendingStatus('sending');
+     // ... 로직
+     updateSendingStatus('completed');
+   };
+   ```
+
+### Snackbar Styling Guidelines
+모든 스낵바는 일관된 스타일을 유지해야 하며, 배경색이 밝을 때도 잘 보이도록 진한 색상을 사용해야 합니다.
+
+#### Color Styling
+- **모든 severity에 진한 색상 적용**: 성공, 실패, 경고, 정보 스낵바 모두 테마의 `main` 색상과 `contrastText`를 사용하여 가독성을 보장합니다
+- **배경색**: 각 severity의 `main` 색상 사용 (예: `success.main`, `error.main`, `warning.main`, `info.main`)
+- **텍스트 색상**: 각 severity의 `contrastText` 사용 (예: `success.contrastText`, `error.contrastText`)
+- **아이콘 색상**: 텍스트 색상과 동일하게 `contrastText` 사용
+
+```typescript
+<Alert
+  severity={snackbar.severity}
+  sx={{
+    width: '100%',
+    // 모든 severity에 대해 진한 색상 적용 (배경색이 밝을 때도 잘 보이도록)
+    ...(snackbar.severity === 'success' && {
+      bgcolor: 'success.main',
+      color: 'success.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'success.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'error' && {
+      bgcolor: 'error.main',
+      color: 'error.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'error.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'warning' && {
+      bgcolor: 'warning.main',
+      color: 'warning.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'warning.contrastText',
+      },
+    }),
+    ...(snackbar.severity === 'info' && {
+      bgcolor: 'info.main',
+      color: 'info.contrastText',
+      '& .MuiAlert-icon': {
+        color: 'info.contrastText',
+      },
+    }),
+  }}
+>
+  {snackbar.message}
+</Alert>
+```
+
+#### Position Styling
+- **기본 위치**: 중앙 하단 (`anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}`)
+- **커스텀 위치 불필요**: MUI의 기본 `anchorOrigin` 속성만 사용하며, 추가적인 `sx` 스타일로 위치를 오버라이드하지 않습니다
+- **일관성 유지**: 모든 스낵바는 동일한 위치에 표시되어야 합니다
+
+```typescript
+<Snackbar
+  open={snackbar.open}
+  autoHideDuration={snackbar.duration}
+  onClose={handleClose}
+  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+>
+  {/* Alert 컴포넌트 */}
+</Snackbar>
+```
+
+#### Key Points
+- **진한 색상 필수**: 배경색이 밝을 때도 스낵바가 잘 보이도록 `main` 색상과 `contrastText` 사용
+- **모든 severity 지원**: success, error, warning, info 모두 동일한 스타일 패턴 적용
+- **중앙 하단 위치**: 기본적으로 중앙 하단에 표시되며, 별도 옵션 없이는 이 위치를 유지
+- **일관된 스타일**: 모든 스낵바는 동일한 스타일 규칙을 따름
+
+### Status-Based Snackbar (발송 상태 스낵바)
+발송 상태와 같은 단계별 프로세스를 표시하는 스낵바는 다음과 같은 패턴을 따릅니다:
+
+- **상태 단계**: `request` → `sending` → `completed`
+- **UI 표시 위치**: 화면 우측 하단 고정
+- **로딩 애니메이션**: `sending` 상태일 때 `CircularProgress` 표시
+- **완료 후 액션**: `completed` 상태일 때 추가 액션 버튼 (예: "발송 이력 보기") 표시 (버튼 텍스트는 다국어 적용 필요)
+
+### Key Points
+- **Provider 위치**: Router 내부에 배치하여 Router 컨텍스트 접근 가능
+- **컴포넌트 위치**: 스낵바 컴포넌트는 Provider 내부에서 렌더링
+- **상태 관리**: Context를 통해 전역 상태로 관리
+- **페이지 전환**: 페이지 전환 시 스낵바 상태 유지
+- **자동 닫기**: `sending` 상태일 때는 자동 닫기 방지
+
+### Summary
+- **전역 관리**: Context API로 전역 상태 관리
+- **페이지 독립**: 페이지 컴포넌트에 종속되지 않음
+- **지속성**: 페이지 전환 후에도 계속 표시
+- **Router 내부**: Provider는 Router 내부에 배치
+- **상태 기반**: 단계별 상태에 따른 UI 변경 지원
+- **스타일 일관성**: 모든 severity(success, error, warning, info)에 진한 색상 적용
+- **위치 고정**: 기본적으로 중앙 하단에 표시 (`anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}`)
+
+## Navigation
+```typescript
+const navigate = useNavigate();
+navigate('/auto-mail');
+```
+
+## Local Storage
+```typescript
+import { saveTemplate, getTemplate } from '../utils/storage';
+saveTemplate(groupId, templateId, title, content);
+const template = getTemplate(groupId, templateId);
+```
+
+## Theme Usage
+```typescript
+const theme = useTheme();
+// Or in sx prop: sx={{ color: 'primary.main' }}
+```
+
+## Query Parameters for Search, Filtering, and Table State
+검색 기능, 필터링 기능, 테이블 컴포넌트가 있는 페이지는 쿼리 파라미터를 통해 상태를 URL에 저장하고 공유할 수 있어야 합니다.
+
+### When to Use Query Parameters
+- 검색 기능이 있는 페이지
+- 필터링 기능이 있는 페이지
+- 테이블 컴포넌트가 있는 페이지 (페이지네이션 포함)
+- 탭 기반 UI가 있는 페이지
+- 상세 모달을 열 수 있는 페이지
+
+### Implementation Pattern
+1. **Import Required Hooks**
+   ```typescript
+   import { useEffect } from 'react';
+   import { useSearchParams } from 'react-router-dom';
+   ```
+
+2. **Initialize State and Query Parameters**
+   ```typescript
+   const [searchParams, setSearchParams] = useSearchParams();
+   const [isInitialized, setIsInitialized] = useState(false);
+
+   // 페이지 상태들
+   const [tabValue, setTabValue] = useState<number>(0);
+   const [searchQuery, setSearchQuery] = useState<string>('');
+   const [searchType, setSearchType] = useState<string>('all');
+   const [filter1, setFilter1] = useState<string>('all');
+   const [page, setPage] = useState<number>(0);
+   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+   ```
+
+3. **Read Initial Values from URL Parameters (One-time)**
+   ```typescript
+   useEffect(() => {
+     if (isInitialized) return; // 이미 초기화되었으면 실행하지 않음
+
+     // URL 파라미터 읽기
+     const tabParam = searchParams.get('tab');
+     const searchParam = searchParams.get('search');
+     const searchTypeParam = searchParams.get('searchType');
+     const filter1Param = searchParams.get('filter1');
+     const pageParam = searchParams.get('page');
+     const rowsPerPageParam = searchParams.get('rowsPerPage');
+     const itemIdParam = searchParams.get('itemId'); // 상세 모달용
+
+     // itemId 파라미터가 있으면 해당 항목을 찾아서 모달 열기
+     if (itemIdParam) {
+       const item = items.find((item) => item.id === itemIdParam);
+       if (item) {
+         setSelectedItem(item);
+         setOpenModal(true);
+         // URL에서 itemId 파라미터 제거
+         const newParams = new URLSearchParams(searchParams);
+         newParams.delete('itemId');
+         setSearchParams(newParams, { replace: true });
+       }
+     }
+
+     // URL 파라미터에서 초기값 설정
+     if (tabParam) {
+       const tabIndex = tabParam === 'tab1' ? 0 : tabParam === 'tab2' ? 1 : 0;
+       setTabValue(tabIndex);
+     }
+     if (searchParam !== null) {
+       setSearchQuery(searchParam);
+     }
+     if (searchTypeParam) {
+       setSearchType(searchTypeParam);
+     }
+     if (filter1Param) {
+       setFilter1(filter1Param);
+     }
+     if (pageParam) {
+       const pageNum = parseInt(pageParam, 10);
+       if (!isNaN(pageNum)) {
+         setPage(pageNum);
+       }
+     }
+     if (rowsPerPageParam) {
+       const rowsNum = parseInt(rowsPerPageParam, 10);
+       if (!isNaN(rowsNum)) {
+         setRowsPerPage(rowsNum);
+       }
+     }
+
+     setIsInitialized(true);
+   }, [isInitialized, searchParams, setSearchParams, items]);
+   ```
+
+4. **Update URL Parameters When State Changes**
+   ```typescript
+   useEffect(() => {
+     if (!isInitialized) return; // 초기화되지 않았으면 실행하지 않음
+
+     const newParams = new URLSearchParams();
+
+     // 탭 선택
+     if (tabValue === 0) {
+       newParams.set('tab', 'tab1');
+     } else if (tabValue === 1) {
+       newParams.set('tab', 'tab2');
+     }
+
+     // 검색 관련
+     if (searchQuery) {
+       newParams.set('search', searchQuery);
+     }
+     if (searchType !== 'all') {
+       newParams.set('searchType', searchType);
+     }
+
+     // 필터
+     if (filter1 !== 'all') {
+       newParams.set('filter1', filter1);
+     }
+
+     // 페이지네이션
+     if (page !== 0) {
+       newParams.set('page', String(page));
+     }
+     if (rowsPerPage !== 10) {
+       newParams.set('rowsPerPage', String(rowsPerPage));
+     }
+
+     // 현재 URL과 비교하여 변경사항이 있을 때만 업데이트
+     const currentParams = searchParams.toString();
+     const newParamsStr = newParams.toString();
+
+     if (currentParams !== newParamsStr) {
+       setSearchParams(newParams, { replace: true });
+     }
+   }, [
+     tabValue,
+     searchQuery,
+     searchType,
+     filter1,
+     page,
+     rowsPerPage,
+     isInitialized,
+     searchParams,
+     setSearchParams,
+   ]);
+   ```
+
+### Key Points
+- **isInitialized 플래그**: 초기화가 한 번만 실행되도록 보장
+- **replace: true**: 브라우저 히스토리에 불필요한 항목이 쌓이지 않도록 함
+- **조건부 업데이트**: 기본값이 아닌 경우에만 URL 파라미터에 추가
+- **변경사항 체크**: 현재 URL과 비교하여 실제 변경사항이 있을 때만 업데이트
+- **상세 모달**: `itemId` 파라미터를 통해 특정 항목의 상세 모달을 자동으로 열 수 있음
+
+### Example: Tab-Based UI with Multiple Pagination States
+탭 기반 UI에서 각 탭마다 독립적인 페이지네이션 상태를 가질 때:
+
+```typescript
+// 각 탭별 페이지네이션 상태
+const [autoPage, setAutoPage] = useState<number>(0);
+const [autoRowsPerPage, setAutoRowsPerPage] = useState<number>(10);
+const [manualPage, setManualPage] = useState<number>(0);
+const [manualRowsPerPage, setManualRowsPerPage] = useState<number>(10);
+
+// URL 파라미터 읽기
+useEffect(() => {
+  if (isInitialized) return;
+
+  const autoPageParam = searchParams.get('autoPage');
+  const autoRowsPerPageParam = searchParams.get('autoRowsPerPage');
+  const manualPageParam = searchParams.get('manualPage');
+  const manualRowsPerPageParam = searchParams.get('manualRowsPerPage');
+
+  if (autoPageParam) {
+    const pageNum = parseInt(autoPageParam, 10);
+    if (!isNaN(pageNum)) {
+      setAutoPage(pageNum);
+    }
+  }
+  // ... 다른 파라미터들
+
+  setIsInitialized(true);
+}, [isInitialized, searchParams, setSearchParams]);
+
+// URL 파라미터 업데이트
+useEffect(() => {
+  if (!isInitialized) return;
+
+  const newParams = new URLSearchParams();
+
+  if (autoPage !== 0) {
+    newParams.set('autoPage', String(autoPage));
+  }
+  if (autoRowsPerPage !== 10) {
+    newParams.set('autoRowsPerPage', String(autoRowsPerPage));
+  }
+  if (manualPage !== 0) {
+    newParams.set('manualPage', String(manualPage));
+  }
+  if (manualRowsPerPage !== 10) {
+    newParams.set('manualRowsPerPage', String(manualRowsPerPage));
+  }
+
+  // ... 변경사항 체크 및 업데이트
+}, [autoPage, autoRowsPerPage, manualPage, manualRowsPerPage, isInitialized, searchParams, setSearchParams]);
+```
+
+### Summary
+- **검색/필터/테이블 페이지**: 항상 쿼리 파라미터 지원 구현
+- **isInitialized 플래그**: 초기화 한 번만 실행
+- **조건부 업데이트**: 기본값이 아닌 경우에만 URL에 추가
+- **변경사항 체크**: 실제 변경이 있을 때만 업데이트
+- **상세 모달**: itemId 파라미터로 자동 열기 지원

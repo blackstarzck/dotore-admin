@@ -1,21 +1,25 @@
+import { lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import InquiryListPage from './pages/InquiryListPage';
-import InquiryAnalysisPage from './pages/InquiryAnalysisPage';
-import AutoMailPage from './pages/AutoMailPage';
-import AutoMailTemplatePage from './pages/AutoMailTemplatePage';
-import ManualMailPage from './pages/ManualMailPage';
-import ManualMailTemplatePage from './pages/ManualMailTemplatePage';
-import MailGroupPage from './pages/MailGroupPage';
-import MailHistoryPage from './pages/MailHistoryPage';
-import MemberManagementPage from './pages/MemberManagementPage';
-import Layout from './components/Layout';
+import Loadable from './components/Loadable';
+import DashboardLayout from './layout/Dashboard';
 import { getAuthToken } from './utils/storage';
 import { ColorModeProvider } from './context/ColorModeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { SnackbarProvider } from './context/SnackbarContext';
 import { SendingStatusProvider } from './context/SendingStatusContext';
 import ThemeCustomization from './themes';
+
+// Lazy load pages
+const LoginPage = Loadable(lazy(() => import('./pages/LoginPage')));
+const InquiryListPage = Loadable(lazy(() => import('./pages/InquiryListPage')));
+const InquiryAnalysisPage = Loadable(lazy(() => import('./pages/InquiryAnalysisPage')));
+const AutoMailPage = Loadable(lazy(() => import('./pages/AutoMailPage')));
+const AutoMailTemplatePage = Loadable(lazy(() => import('./pages/AutoMailTemplatePage')));
+const ManualMailPage = Loadable(lazy(() => import('./pages/ManualMailPage')));
+const ManualMailTemplatePage = Loadable(lazy(() => import('./pages/ManualMailTemplatePage')));
+const MailGroupPage = Loadable(lazy(() => import('./pages/MailGroupPage')));
+const MailHistoryPage = Loadable(lazy(() => import('./pages/MailHistoryPage')));
+const MemberManagementPage = Loadable(lazy(() => import('./pages/MemberManagementPage')));
 
 // 타입스크립트 확장을 통해 커스텀 팔레트 속성 정의
 declare module '@mui/material/styles' {
@@ -72,7 +76,7 @@ function App() {
                     path="/"
                     element={
                       <PrivateRoute>
-                        <Layout />
+                        <DashboardLayout />
                       </PrivateRoute>
                     }
                   >

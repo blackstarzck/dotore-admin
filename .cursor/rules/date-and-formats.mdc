@@ -1,0 +1,82 @@
+---
+alwaysApply: true
+---
+
+# Date Format and Special Feature Guidelines
+
+## Date Format Guidelines
+모든 날짜 표시는 **YY-MM-DD** 형식을 사용해야 합니다.
+
+### Date Format Rules
+- **표준 형식**: `YY-MM-DD` (연도 2자리, 월 2자리, 일 2자리)
+  - 예: `24-01-15` (2024년 1월 15일)
+  - 예: `23-12-31` (2023년 12월 31일)
+- 날짜만 표시할 때는 `YY-MM-DD` 형식을 사용합니다
+- 시간이 필요한 경우 시간은 별도로 표시하거나 `YY-MM-DD HH:MM` 형식을 사용할 수 있습니다
+- CSV 내보내기 시에도 동일한 형식을 사용합니다
+
+### Date Formatting Function Example
+```typescript
+const formatDateOnly = (dateString: string) => {
+  const date = new Date(dateString);
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+```
+
+### Time Formatting Function Example (if needed)
+```typescript
+const formatTimeOnly = (dateString: string) => {
+  const date = new Date(dateString);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+```
+
+### Summary
+- **날짜 형식**: 항상 `YY-MM-DD` 형식 사용
+- **월/일**: 항상 2자리로 표시 (padStart 사용)
+- **연도**: 마지막 2자리만 표시 (slice(-2) 사용)
+- **일관성**: 모든 페이지에서 동일한 형식 유지
+
+## Auto Mail (자동 메일) Design Guidelines
+자동 메일 발송은 시스템에서 자동으로 처리되므로, UI 설계 시 다음과 같은 특성을 고려해야 합니다.
+
+### Auto Mail Characteristics
+- **자동 발송**: 시스템에서 자동으로 발송되므로 발송자 정보가 없습니다
+- **사용자별 발송 시간**: 각 사용자의 상황에 따라 발송 시간이 다릅니다
+- **고정된 발송일 없음**: 전체 발송에 대한 고정된 발송일이 없습니다
+
+### Auto Mail Table Design Rules
+자동 메일 발송 이력 테이블에는 다음 컬럼만 표시해야 합니다:
+- 템플릿 이름
+- 그룹 이름
+- 수신자 수
+- 발송 성공
+- 발송 실패
+
+**제외해야 할 컬럼:**
+- ❌ **상태 컬럼**: 자동 메일 테이블에는 상태 컬럼을 표시하지 않습니다
+- ❌ **발송자 컬럼**: 시스템에서 자동으로 발송되므로 발송자 정보가 필요 없습니다
+- ❌ **유형 컬럼**: 자동 탭에만 있으므로 유형 정보가 중복됩니다
+- ❌ **발송일 컬럼**: 자동 발송은 사용자마다 발송 시간이 다르므로 고정된 발송일이 없습니다
+
+### Auto Mail Date Display
+- **메인 테이블**: 자동 발송의 경우 발송일 셀에 `'-'`를 표시합니다
+  ```typescript
+  {item.type === 'auto' ? '-' : formatDateOnly(item.sentAt)}
+  ```
+- **수신자 목록**: 각 수신자별로 실제 발송 시간을 표시합니다 (수신자마다 발송 시간이 다름)
+
+### Auto Mail Data Structure
+- 자동 발송 메일의 `sentAt` 필드는 전체 발송의 기준 시간일 수 있지만, 실제로는 각 수신자마다 다른 시간에 발송됩니다
+- `successfulRecipients`와 `failedRecipients` 배열의 각 항목은 개별 발송 시간(`sentAt`)을 가집니다
+
+### Summary
+- **자동 메일 테이블**: 템플릿 이름, 그룹 이름, 수신자 수, 발송 성공, 발송 실패만 표시
+- **발송일 표시**: 메인 테이블에서는 `'-'` 표시, 수신자 목록에서는 개별 발송 시간 표시
+- **발송자 정보**: 자동 발송은 시스템에서 처리되므로 발송자 정보 불필요
+- **상태 정보**: 자동 메일 테이블에는 상태 컬럼 제외
