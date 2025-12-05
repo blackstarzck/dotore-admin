@@ -264,6 +264,36 @@ export const Provider = ({ children }: { children: React.ReactNode }) => {
 - Use `onEditorChange` sparingly to avoid cursor issues with IME input
 - Retrieve content with `editorRef.current.getContent()` when needed
 - Use `editor.getContent({ format: 'text' })` to get plain text
+- **Editor 컴포넌트에 `key` 속성은 사용하지 않습니다**: Editor 컴포넌트는 React의 `key` prop을 사용하지 않으며, 각 언어별로 독립적인 에디터 인스턴스를 관리하기 위해 `editorRefs`를 사용합니다
+
+#### TinyMCE Language Configuration
+TinyMCE 에디터의 언어 설정은 `init` 객체의 `language` 속성을 통해 설정합니다. **TinyMCE 공식 언어 코드만 사용해야 하며, 공식 목록에 없는 형식은 절대 사용하지 않습니다.**
+
+**프로젝트에서 사용하는 언어:**
+- **한국어**: `'ko-KR'` (TinyMCE 공식 코드: Korean (Korea))
+- **영어**: `'en'` (TinyMCE 공식 코드: English)
+- **베트남어**: `'vi'` (TinyMCE 공식 코드: Vietnamese)
+
+**Example:**
+```typescript
+<Editor
+  init={{
+    ...editorConfig,
+    language: lang === 'ko' ? 'ko-KR' : lang === 'vi' ? 'vi' : 'en',
+  }}
+/>
+```
+
+**Important Notes:**
+- **한국어**: 반드시 `'ko-KR'` 형식을 사용합니다 (`'ko'`만 사용하거나 `'ko_KR'` 형식은 절대 사용하지 않습니다)
+- **베트남어**: 반드시 `'vi'`만 사용합니다 (`'vi-VN'` 또는 `'vi_VN'` 형식은 절대 사용하지 않습니다)
+- **영어**: `'en'`을 사용합니다
+- **공식 언어 코드만 사용**: TinyMCE 공식 언어 코드 목록에 정의된 형식만 사용해야 합니다
+- **탭 변경 시 언어 설정**: 탭을 변경할 때 에디터는 재생성되지 않으며, 각 언어별로 독립적인 에디터 인스턴스를 유지합니다. 에디터는 항상 렌더링되지만 `display` 속성으로 보이기/숨기기만 처리하여 내용이 유지되도록 합니다
+
+**TinyMCE 공식 언어 코드 목록:**
+프로젝트에서 사용하는 언어 외에도 다음 공식 언어 코드를 사용할 수 있습니다:
+- `ar` (Arabic), `eu` (Basque), `bg-BG` (Bulgarian), `ca` (Catalan), `zh-CN` (Chinese China), `zh-TW` (Chinese Taiwan), `hr` (Croatian), `cs` (Czech), `da` (Danish), `nl` (Dutch), `fi` (Finnish), `fr-FR` (French France), `de` (German), `el` (Greek), `he-IL` (Hebrew Israel), `hi` (Hindi), `hu-HU` (Hungarian Hungary), `id` (Indonesian), `it` (Italian), `ja` (Japanese), `kk` (Kazakh), `ms` (Malay), `nb-NO` (Norwegian Bokmål Norway), `fa` (Persian), `pl` (Polish), `pt-BR` (Portuguese Brazil), `pt-PT` (Portuguese Portugal), `ro` (Romanian), `ru` (Russian), `sk` (Slovak), `sl-SI` (Slovenian Slovenia), `es` (Spanish), `sv-SE` (Swedish Sweden), `th-TH` (Thai Thailand), `tr` (Turkish), `uk` (Ukrainian), `vi` (Vietnamese)
 
 ### State Management
 - **Local State**: Use `useState` for component-specific state
@@ -1094,23 +1124,40 @@ const getContent = (): MultilingualContent => {
   <Editor
     onInit={(evt, editor) => handleEditorInit('ko', editor)}
     initialValue={content.ko}
-    init={editorConfig}
+    init={{
+      ...editorConfig,
+      language: 'ko-KR', // 한국어: ko-KR 형식 사용
+    }}
   />
 </CustomTabPanel>
 <CustomTabPanel value={languageTab} index={1}>
   <Editor
     onInit={(evt, editor) => handleEditorInit('en', editor)}
     initialValue={content.en}
-    init={editorConfig}
+    init={{
+      ...editorConfig,
+      language: 'en', // 영어: en 사용
+    }}
   />
 </CustomTabPanel>
 <CustomTabPanel value={languageTab} index={2}>
   <Editor
     onInit={(evt, editor) => handleEditorInit('vi', editor)}
     initialValue={content.vi}
-    init={editorConfig}
+    init={{
+      ...editorConfig,
+      language: 'vi', // 베트남어: vi만 사용 (vi-VN 아님)
+    }}
   />
 </CustomTabPanel>
+```
+
+**TinyMCE Language Configuration:**
+- **한국어**: 반드시 `'ko-KR'` 형식을 사용합니다 (`'ko'`만 사용하거나 `'ko_KR'` 형식은 절대 사용하지 않습니다)
+- **영어**: `'en'`을 사용합니다
+- **베트남어**: 반드시 `'vi'`만 사용합니다 (`'vi-VN'` 또는 `'vi_VN'` 형식은 절대 사용하지 않습니다)
+- **공식 언어 코드만 사용**: TinyMCE 공식 언어 코드 목록에 정의된 형식만 사용해야 합니다
+- 탭을 변경할 때 에디터가 재생성되어야 언어가 올바르게 적용됩니다. 이를 위해 `key` prop에 탭 인덱스를 포함시키거나, 활성 탭에서만 에디터를 렌더링하도록 구현해야 합니다
 ```
 
 #### Storage Pattern
