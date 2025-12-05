@@ -93,7 +93,7 @@ export default function NavGroup({ item, drawerOpen, onDrawerClose }: NavGroupPr
         item.title &&
         drawerOpen && (
           <Box sx={{ pl: 3 }}>
-            <Typography variant="subtitle2" color="text.secondary">
+            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 400 }}>
               {t(item.title)}
             </Typography>
             {/* only available in paid version */}
