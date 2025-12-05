@@ -1,17 +1,15 @@
-import { Add, Clear, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
+import { Add, EditOutlined, KeyboardArrowUp, Preview, SendOutlined } from '@mui/icons-material';
 import {
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Divider,
   Fab,
   FormControl,
   IconButton,
-  InputAdornment,
   InputLabel,
   List,
   ListItem,
@@ -30,6 +28,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TestSendDialog from '../components/TestSendDialog';
 import { useLanguage } from '../context/LanguageContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { autoMailGroups as initialAutoMailGroups, MailGroup, MailTemplate } from '../data/mockMailData';
@@ -52,8 +51,15 @@ const AutoMailPage = () => {
   const [previewContent, setPreviewContent] = useState<string>('');
   const [autoSendSettings, setAutoSendSettings] = useState<Record<string, boolean>>({});
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
-  const [testEmail, setTestEmail] = useState('');
-  const [_testSendTemplate, setTestSendTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
+  const [selectedNationalities, setSelectedNationalities] = useState<string[]>([]);
+
+  // 기본 국적 목록
+  const nationalityLabels: Record<string, string> = {
+    KR: '한국',
+    US: '미국',
+    VN: '베트남',
+  };
+  const defaultNationalities = ['KR', 'US', 'VN'];
   const [newTemplateDialogOpen, setNewTemplateDialogOpen] = useState(false);
   const [newGroupDialogOpen, setNewGroupDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<{ template: MailTemplate; groupId: string } | null>(null);
@@ -394,14 +400,14 @@ const AutoMailPage = () => {
 
   const handleTestSendClick = (e: React.MouseEvent, template: MailTemplate, groupId: string) => {
     e.stopPropagation();
-    setTestSendTemplate({ template, groupId });
+    // 모달 열 때 선택된 국적을 기본값으로 초기화
+    setSelectedNationalities([...defaultNationalities]);
     setTestSendDialogOpen(true);
   };
 
   const handleCloseTestSend = () => {
     setTestSendDialogOpen(false);
-    setTestEmail('');
-    setTestSendTemplate(null);
+    setSelectedNationalities([]);
   };
 
   return (
@@ -602,119 +608,16 @@ const AutoMailPage = () => {
       </Dialog>
 
       {/* 나에게 보내기 다이얼로그 */}
-      <Dialog
+      <TestSendDialog
         open={testSendDialogOpen}
         onClose={handleCloseTestSend}
-        slotProps={{
-          paper: {
-            component: 'form',
-            onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget as HTMLFormElement);
-              const formJson = Object.fromEntries(formData.entries());
-              const email = formJson.email as string;
-
-              if (email) {
-                // 테스트 발송 로직 (임시로 스낵바만 표시)
-                showSnackbar(
-                  getCommonText('testEmailSent', language).replace('{email}', email),
-                  'success',
-                  3000
-                );
-                setTestSendDialogOpen(false);
-                setTestEmail('');
-                setTestSendTemplate(null);
-              }
-            },
-          },
-        }}
-      >
-        <DialogTitle>
-          <Typography variant="h5" fontWeight="bold" component="div">
-            {getCommonText('sendToMe', language)}
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {getCommonText('sendToMeDescription', language)}
-          </DialogContentText>
-          <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="email"
-            name="email"
-            label={getCommonText('emailAddress', language)}
-            type="email"
-            fullWidth
-            variant="standard"
-            value={testEmail}
-            onChange={(e) => setTestEmail(e.target.value)}
-            sx={{
-              mt: 2,
-              '& .MuiInput-root': {
-                backgroundColor: 'transparent !important',
-                '&:hover:not(.Mui-disabled):before': {
-                  borderBottomColor: 'divider',
-                },
-                '&:after': {
-                  borderBottomColor: 'primary.main',
-                },
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-filled': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-              '& .MuiInputBase-root': {
-                backgroundColor: 'transparent !important',
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-filled': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-              '& .MuiInputBase-input': {
-                backgroundColor: 'transparent !important',
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&:focus': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.MuiInputBase-input': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-            }}
-            InputProps={{
-              endAdornment: testEmail && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setTestEmail('')}
-                    edge="end"
-                  >
-                    <Clear fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseTestSend}>{getCommonText('cancel', language)}</Button>
-          <Button type="submit">{getCommonText('send', language)}</Button>
-        </DialogActions>
-      </Dialog>
+        nationalities={defaultNationalities.map((nationality) => ({
+          value: nationality,
+          label: nationalityLabels[nationality],
+        }))}
+        selectedNationalities={selectedNationalities}
+        onNationalitiesChange={setSelectedNationalities}
+      />
 
       {/* 새 템플릿 작성 다이얼로그 */}
       <Dialog open={newTemplateDialogOpen} onClose={handleCloseNewTemplate} maxWidth="sm" fullWidth>

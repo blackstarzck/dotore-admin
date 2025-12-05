@@ -1,9 +1,10 @@
-import { Clear, Warning } from '@mui/icons-material';
-import { Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, IconButton, InputAdornment, ListItemText, MenuItem, Paper, Select, SelectChangeEvent, Tab, Tabs, TextField, Tooltip, Typography, useMediaQuery } from '@mui/material';
+import { Warning } from '@mui/icons-material';
+import { Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, ListItemText, MenuItem, Paper, Select, SelectChangeEvent, Tab, Tabs, TextField, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Editor } from '@tinymce/tinymce-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import TestSendDialog from '../components/TestSendDialog';
 import { useLanguage } from '../context/LanguageContext';
 import { useSendingStatus } from '../context/SendingStatusContext';
 import { useSnackbar } from '../context/SnackbarContext';
@@ -33,6 +34,7 @@ function CustomTabPanel(props: TabPanelProps) {
 
   return (
     <div
+      key={`tabpanel-${index}`}
       role="tabpanel"
       hidden={value !== index}
       id={`mail-template-tabpanel-${index}`}
@@ -86,8 +88,8 @@ const ManualMailTemplatePage = () => {
   });
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [saveConfirmDialogOpen, setSaveConfirmDialogOpen] = useState(false);
   const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
-  const [testEmail, setTestEmail] = useState('');
   const [selectedNationalities, setSelectedNationalities] = useState<string[]>([]); // 나에게 보내기 모달에서 선택된 국적
   // 유효성 검사 상태
   const [titleErrors, setTitleErrors] = useState<Record<string, boolean>>({});
@@ -237,7 +239,7 @@ const ManualMailTemplatePage = () => {
       const editor = editorRefs.current[nationality as 'KR' | 'US' | 'VN'];
       if (editor && isEditorReady[nationality as 'KR' | 'US' | 'VN'] && initialContent[nationality]) {
         const currentContent = editor.getContent();
-        if (currentContent !== initialContent[nationality]) {
+        if (!content[nationality] && currentContent !== initialContent[nationality]) {
           editor.setContent(initialContent[nationality]);
           setContent((prev) => ({ ...prev, [nationality]: initialContent[nationality] }));
         }
@@ -299,7 +301,15 @@ const ManualMailTemplatePage = () => {
   // 본문 유효성 검사
   const validateContent = (nationality: string): boolean => {
     const editor = editorRefs.current[nationality as 'KR' | 'US' | 'VN'];
-    const contentText = editor?.getContent({ format: 'text' }) || '';
+    // 에디터가 있으면 에디터에서 가져오고, 없으면 content state 또는 initialContent에서 가져오기
+    let contentText = '';
+    if (editor) {
+      contentText = editor.getContent({ format: 'text' }) || '';
+    } else {
+      // 에디터가 없으면 content state 또는 initialContent에서 가져오기 (HTML 태그 제거)
+      const htmlContent = content[nationality] || initialContent[nationality] || '';
+      contentText = htmlContent.replace(/<[^>]*>/g, '').trim();
+    }
     const isValid = contentText.trim() !== '';
     setContentErrors((prev) => ({ ...prev, [nationality]: !isValid }));
     return isValid;
@@ -307,35 +317,40 @@ const ManualMailTemplatePage = () => {
 
   // 모든 필드 유효성 검사
   const validateAllFields = (): boolean => {
+    // availableNationalities가 비어있으면 검사하지 않음
+    if (availableNationalities.length === 0) {
+      return true;
+    }
+
     let isValid = true;
 
     // 제목 검사
-    availableNationalities.forEach((nationality) => {
-      if (!validateTitle(nationality, title[nationality] || '')) {
+    for (const nationality of availableNationalities) {
+      const titleValue = title[nationality] || '';
+      if (!validateTitle(nationality, titleValue)) {
         isValid = false;
       }
-    });
+    }
 
     // 본문 검사
-    availableNationalities.forEach((nationality) => {
+    for (const nationality of availableNationalities) {
       if (!validateContent(nationality)) {
         isValid = false;
       }
-    });
+    }
 
     return isValid;
   };
 
-  // 템플릿 저장 유효성 검사
+  // 템플릿 저장 유효성 검사 (버튼 활성/비활성화용)
   const validateForSave = (): { isValid: boolean; errorMessage?: string } => {
-    if (!validateNationalityTitles(title)) {
-      return { isValid: false, errorMessage: '모든 국적에 대한 제목을 입력해주세요.' };
+    // 발송 대상 선택 여부로 버튼 활성/비활성화 결정
+    if (selectedGroupIds.length === 0) {
+      return { isValid: false, errorMessage: '발송 대상을 선택해주세요.' };
     }
 
-    const allContentText = getAllContentText();
-    const missingContent = availableNationalities.find((nationality) => !allContentText[nationality]);
-    if (missingContent) {
-      return { isValid: false, errorMessage: '모든 국적에 대한 컨텐츠를 입력해주세요.' };
+    if (availableNationalities.length === 0) {
+      return { isValid: false, errorMessage: '선택한 발송 대상에 해당하는 국적이 없습니다.' };
     }
 
     return { isValid: true };
@@ -387,9 +402,19 @@ const ManualMailTemplatePage = () => {
     return { isValid: true };
   };
 
-  // 템플릿 저장
+  // 템플릿 저장 확인 다이얼로그 열기
   const handleSave = () => {
     if (!groupId || !templateId) return;
+
+    // 모든 필드를 touched 상태로 설정하여 에러 UI 표시
+    const newTitleTouched: Record<string, boolean> = {};
+    const newContentTouched: Record<string, boolean> = {};
+    availableNationalities.forEach((nationality) => {
+      newTitleTouched[nationality] = true;
+      newContentTouched[nationality] = true;
+    });
+    setTitleTouched(newTitleTouched);
+    setContentTouched(newContentTouched);
 
     setShouldValidate(true);
     if (!validateAllFields()) {
@@ -397,11 +422,24 @@ const ManualMailTemplatePage = () => {
       return;
     }
 
-    const validation = validateForSave();
-    if (!validation.isValid) {
-      showSnackbar(validation.errorMessage || '템플릿을 저장할 수 없습니다.', 'error', 3000);
+    // 발송 대상 선택 여부 확인
+    if (selectedGroupIds.length === 0) {
+      showSnackbar('발송 대상을 선택해주세요.', 'error', 3000);
       return;
     }
+
+    if (availableNationalities.length === 0) {
+      showSnackbar('선택한 발송 대상에 해당하는 국적이 없습니다.', 'error', 3000);
+      return;
+    }
+
+    // 모든 유효성 검사 통과 시 다이얼로그 표시
+    setSaveConfirmDialogOpen(true);
+  };
+
+  // 템플릿 저장 실행
+  const handleConfirmSave = () => {
+    if (!groupId || !templateId) return;
 
     // 템플릿 이름 가져오기
     const templateName = template
@@ -443,12 +481,23 @@ const ManualMailTemplatePage = () => {
       }
     }
 
+    setSaveConfirmDialogOpen(false);
     showSnackbar('템플릿이 저장되었습니다.', 'success', 5000);
     navigate('/manual-mail');
   };
 
   // 나에게 보내기 다이얼로그 열기
   const handleTestSend = () => {
+    // 모든 필드를 touched 상태로 설정하여 에러 UI 표시
+    const newTitleTouched: Record<string, boolean> = {};
+    const newContentTouched: Record<string, boolean> = {};
+    availableNationalities.forEach((nationality) => {
+      newTitleTouched[nationality] = true;
+      newContentTouched[nationality] = true;
+    });
+    setTitleTouched(newTitleTouched);
+    setContentTouched(newContentTouched);
+
     setShouldValidate(true);
     if (!validateAllFields()) {
       showSnackbar('제목과 본문을 모두 입력해주세요.', 'error', 3000);
@@ -622,89 +671,86 @@ const ManualMailTemplatePage = () => {
     },
   };
 
-  const renderEditor = (nationality: string) => (
-    <CustomTabPanel value={nationalityTab} index={nationality}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-          제목
-        </Typography>
-        <TextField
-          fullWidth
-          value={title[nationality]}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            setTitle((prev) => ({ ...prev, [nationality]: newValue }));
-            // 입력할 때마다 유효성 검사
-            validateTitle(nationality, newValue);
-          }}
-          onBlur={() => {
-            // 포커스 아웃 시 유효성 검사 및 touched 상태 설정
-            setTitleTouched((prev) => ({ ...prev, [nationality]: true }));
-            validateTitle(nationality, title[nationality] || '');
-          }}
-          placeholder={`이메일 제목을 입력하세요 (${nationalityLabels[nationality]})`}
-          variant="outlined"
-          error={(shouldValidate || titleTouched[nationality]) && titleErrors[nationality]}
-          helperText={(shouldValidate || titleTouched[nationality]) && titleErrors[nationality] ? '제목을 입력해주세요.' : ''}
-        />
-      </Box>
+  const renderEditor = (nationality: string) => {
+    const isActive = nationalityTab === nationality;
 
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-          본문
-        </Typography>
-        <Box sx={{ position: 'relative', minHeight: 500 }}>
-          {!isEditorReady[nationality as 'KR' | 'US' | 'VN'] && nationalityTab === nationality && (
-            <Box
-              sx={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: 'background.paper', zIndex: 1,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          )}
-          <Box sx={{ display: nationalityTab === nationality ? (isEditorReady[nationality as 'KR' | 'US' | 'VN'] ? 'block' : 'none') : 'none' }}>
-            <Editor
-              key={`editor-${nationality}`}
-              apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
-              onInit={(_evt, editor) => {
-                editorRefs.current[nationality as 'KR' | 'US' | 'VN'] = editor;
-                setIsEditorReady((prev) => ({ ...prev, [nationality]: true }));
-                if (initialContent[nationality]) {
-                  editor.setContent(initialContent[nationality]);
-                  setContent((prev) => ({ ...prev, [nationality]: initialContent[nationality] }));
-                } else {
-                  const currentContent = editor.getContent();
-                  setContent((prev) => ({ ...prev, [nationality]: currentContent }));
-                }
-                // blur 이벤트 등록
-                editor.on('blur', () => {
-                  setContentTouched((prev) => ({ ...prev, [nationality]: true }));
-                  validateContent(nationality);
-                });
-              }}
-              onEditorChange={(_content) => {
-                setContent((prev) => ({ ...prev, [nationality]: _content }));
-                // 에디터 내용 변경 시 유효성 검사 (shouldValidate가 true일 때만)
-                if (shouldValidate || contentErrors[nationality]) {
-                  setTimeout(() => {
+    return (
+      <CustomTabPanel value={nationalityTab} index={nationality}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            제목
+          </Typography>
+          <TextField
+            fullWidth
+            value={title[nationality]}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setTitle((prev) => ({ ...prev, [nationality]: newValue }));
+              // 입력할 때마다 유효성 검사
+              validateTitle(nationality, newValue);
+            }}
+            onBlur={() => {
+              // 포커스 아웃 시 유효성 검사 및 touched 상태 설정
+              setTitleTouched((prev) => ({ ...prev, [nationality]: true }));
+              validateTitle(nationality, title[nationality] || '');
+            }}
+            placeholder={`이메일 제목을 입력하세요 (${nationalityLabels[nationality]})`}
+            variant="outlined"
+            error={(shouldValidate || titleTouched[nationality]) && titleErrors[nationality]}
+            helperText={(shouldValidate || titleTouched[nationality]) && titleErrors[nationality] ? '제목을 입력해주세요.' : ''}
+          />
+        </Box>
+
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            본문
+          </Typography>
+          <Box sx={{ position: 'relative', minHeight: 500 }}>
+            {isActive && !isEditorReady[nationality as 'KR' | 'US' | 'VN'] && (
+              <Box
+                sx={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'background.paper', zIndex: 1,
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            {isActive && (
+              <Editor
+                key={`editor-${nationality}`}
+                apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
+                value={content[nationality]}
+                onInit={(_evt, editor) => {
+                  editorRefs.current[nationality as 'KR' | 'US' | 'VN'] = editor;
+                  setIsEditorReady((prev) => ({ ...prev, [nationality]: true }));
+                  // blur 이벤트 등록
+                  editor.on('blur', () => {
+                    setContentTouched((prev) => ({ ...prev, [nationality]: true }));
                     validateContent(nationality);
-                  }, 0);
-                }
-              }}
-              initialValue={initialContent[nationality]}
-              init={{
-                ...editorConfig,
-                language: nationalityLanguages[nationality] === 'ko' ? 'ko-KR' : nationalityLanguages[nationality] === 'vi' ? 'vi-VN' : 'en',
-              }}
-            />
+                  });
+                }}
+                onEditorChange={(updatedContent) => {
+                  setContent((prev) => ({ ...prev, [nationality]: updatedContent }));
+                  // 에디터 내용 변경 시 유효성 검사 (shouldValidate가 true일 때만)
+                  if (shouldValidate || contentErrors[nationality]) {
+                    setTimeout(() => {
+                      validateContent(nationality);
+                    }, 0);
+                  }
+                }}
+                init={{
+                  ...editorConfig,
+                  language: nationalityLanguages[nationality] === 'ko' ? 'ko-KR' : nationalityLanguages[nationality] === 'vi' ? 'vi' : 'en',
+                }}
+              />
+            )}
           </Box>
         </Box>
-      </Box>
-    </CustomTabPanel>
-  );
+      </CustomTabPanel>
+    );
+  };
 
   return (
     <Box
@@ -851,7 +897,11 @@ const ManualMailTemplatePage = () => {
                 })}
               </Tabs>
 
-              {availableNationalities.map((nationality) => renderEditor(nationality))}
+              {availableNationalities.map((nationality) => (
+                <React.Fragment key={nationality}>
+                  {renderEditor(nationality)}
+                </React.Fragment>
+              ))}
             </>
           )}
         </Box>
@@ -867,7 +917,7 @@ const ManualMailTemplatePage = () => {
               disabled={!saveValidation.isValid}
             >
               {getCommonText('saveTemplate', language)}
-            </Button>
+        </Button>
           );
 
           if (saveValidation.isValid) {
@@ -884,13 +934,13 @@ const ManualMailTemplatePage = () => {
         {(() => {
           const testSendValidation = validateForTestSend();
           const testSendButton = (
-            <Button
-              variant="outlined"
+          <Button
+            variant="outlined"
               onClick={handleTestSend}
               disabled={!testSendValidation.isValid}
-            >
-              {getCommonText('sendToMe', language)}
-            </Button>
+          >
+            {getCommonText('sendToMe', language)}
+          </Button>
           );
 
           if (testSendValidation.isValid) {
@@ -907,10 +957,20 @@ const ManualMailTemplatePage = () => {
         {(() => {
           const sendValidation = validateForSend();
           const sendButton = (
-            <Button
-              variant="contained"
-              color="primary"
+          <Button
+            variant="contained"
+            color="primary"
               onClick={() => {
+                // 모든 필드를 touched 상태로 설정하여 에러 UI 표시
+                const newTitleTouched: Record<string, boolean> = {};
+                const newContentTouched: Record<string, boolean> = {};
+                availableNationalities.forEach((nationality) => {
+                  newTitleTouched[nationality] = true;
+                  newContentTouched[nationality] = true;
+                });
+                setTitleTouched(newTitleTouched);
+                setContentTouched(newContentTouched);
+
                 setShouldValidate(true);
                 if (validateAllFields()) {
                   setConfirmDialogOpen(true);
@@ -919,9 +979,9 @@ const ManualMailTemplatePage = () => {
                 }
               }}
               disabled={!sendValidation.isValid}
-            >
-              {getCommonText('send', language)}
-            </Button>
+          >
+            {getCommonText('send', language)}
+          </Button>
           );
 
           if (sendValidation.isValid) {
@@ -969,173 +1029,54 @@ const ManualMailTemplatePage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* 템플릿 저장 확인 다이얼로그 */}
       <Dialog
-        open={testSendDialogOpen}
-        onClose={() => {
-          setTestSendDialogOpen(false);
-          setTestEmail('');
-          setSelectedNationalities([]);
-        }}
-        slotProps={{
-          paper: {
-            component: 'form',
-            onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget as HTMLFormElement);
-              const formJson = Object.fromEntries(formData.entries());
-              const email = formJson.email as string;
-
-              if (email) {
-                showSnackbar(
-                  getCommonText('testEmailSent', language).replace('{email}', email),
-                  'success',
-                  3000
-                );
-                setTestSendDialogOpen(false);
-                setTestEmail('');
-                setSelectedNationalities([]);
-              }
-            },
-          },
-        }}
+        fullScreen={fullScreen}
+        open={saveConfirmDialogOpen}
+        onClose={() => setSaveConfirmDialogOpen(false)}
+        aria-labelledby="save-confirm-dialog-title"
       >
-        <DialogTitle>
+        <DialogTitle id="save-confirm-dialog-title">
           <Typography variant="h5" fontWeight="bold" component="div">
-            {getCommonText('sendToMe', language)}
+            템플릿을 저장하시겠습니까?
           </Typography>
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {getCommonText('sendToMeDescription', language)}
+            이전에 사용하던 템플릿을 새것으로 교체합니다.
           </DialogContentText>
-          <TextField
-            autoFocus
-            required
-            margin="dense"
-            id="email"
-            name="email"
-            label={getCommonText('emailAddress', language)}
-            type="email"
-            fullWidth
-            variant="standard"
-            value={testEmail}
-            onChange={(e) => setTestEmail(e.target.value)}
-            sx={{
-              mt: 2,
-              '& .MuiInput-root': {
-                backgroundColor: 'transparent !important',
-                '&:hover:not(.Mui-disabled):before': {
-                  borderBottomColor: 'divider',
-                },
-                '&:after': {
-                  borderBottomColor: 'primary.main',
-                },
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-filled': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-              '& .MuiInputBase-root': {
-                backgroundColor: 'transparent !important',
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.Mui-filled': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-              '& .MuiInputBase-input': {
-                backgroundColor: 'transparent !important',
-                '&:hover': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&:focus': {
-                  backgroundColor: 'transparent !important',
-                },
-                '&.MuiInputBase-input': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-            }}
-            InputProps={{
-              endAdornment: testEmail && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setTestEmail('')}
-                    edge="end"
-                  >
-                    <Clear fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          {/* 선택된 그룹의 국적별 정보 체크박스 */}
-          {availableNationalities.length > 0 && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
-                발송할 국적 선택
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1.5 }}>
-                {/* 전체 체크박스 */}
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={
-                        availableNationalities.length > 0 &&
-                        availableNationalities.every((nat) => selectedNationalities.includes(nat))
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedNationalities([...availableNationalities]);
-                        } else {
-                          setSelectedNationalities([]);
-                        }
-                      }}
-                    />
-                  }
-                  label="전체"
-                />
-                {availableNationalities.map((nationality) => (
-                  <FormControlLabel
-                    key={nationality}
-                    control={
-                      <Checkbox
-                        checked={selectedNationalities.includes(nationality)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedNationalities((prev) => [...prev, nationality]);
-                          } else {
-                            setSelectedNationalities((prev) => prev.filter((n) => n !== nationality));
-                          }
-                        }}
-                      />
-                    }
-                    label={nationalityLabels[nationality]}
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
         </DialogContent>
         <DialogActions>
-          <Button
-            type="submit"
-            disabled={!testEmail.trim() || selectedNationalities.length === 0}
-          >
-            {getCommonText('send', language)}
+          <Button onClick={() => setSaveConfirmDialogOpen(false)}>
+            취소
+          </Button>
+          <Button onClick={handleConfirmSave} autoFocus variant="contained">
+            확인
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 나에게 보내기 다이얼로그 */}
+      <TestSendDialog
+        open={testSendDialogOpen}
+        onClose={() => {
+          setTestSendDialogOpen(false);
+          setSelectedNationalities([]);
+        }}
+        nationalities={availableNationalities.map((nationality) => ({
+          value: nationality,
+          label: nationalityLabels[nationality],
+        }))}
+        selectedNationalities={selectedNationalities}
+        onNationalitiesChange={setSelectedNationalities}
+        onSubmit={(email) => {
+          showSnackbar(
+            getCommonText('testEmailSent', language).replace('{email}', email),
+            'success',
+            3000
+          );
+        }}
+      />
 
     </Box>
   );

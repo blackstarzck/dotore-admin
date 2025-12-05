@@ -1,5 +1,4 @@
 import { Box, Button, CircularProgress, Paper, Tab, Tabs, TextField, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { Editor } from '@tinymce/tinymce-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -17,6 +16,12 @@ const AVAILABLE_VARIABLES = [
   { label: '주문 번호', value: '{{orderId}}' },
   { label: '회사명', value: '{{companyName}}' },
 ];
+
+const DEFAULT_CONTENT: MultilingualContent = {
+  ko: '<p>템플릿 내용을 입력하세요.</p>',
+  en: '<p>Please enter template content.</p>',
+  vi: '<p>Vui lòng nhập nội dung mẫu.</p>',
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -65,26 +70,12 @@ const AutoMailTemplatePage = () => {
     en: '',
     vi: '',
   });
-  const [initialContent, setInitialContent] = useState<MultilingualContent>({
-    ko: '<p>템플릿 내용을 입력하세요.</p>',
-    en: '<p>Please enter template content.</p>',
-    vi: '<p>Vui lòng nhập nội dung mẫu.</p>',
-  });
   const [isEditorReady, setIsEditorReady] = useState<{ ko: boolean; en: boolean; vi: boolean }>({
     ko: false,
     en: false,
     vi: false,
   });
-  const [content, setContent] = useState<MultilingualContent>({
-    ko: '',
-    en: '',
-    vi: '',
-  });
-  const editorRefs = useRef<{ ko: any; en: any; vi: any }>({
-    ko: null,
-    en: null,
-    vi: null,
-  });
+  const [content, setContent] = useState<MultilingualContent>(DEFAULT_CONTENT);
   const { showSnackbar } = useSnackbar();
 
   // 템플릿 데이터 찾기 (메모이제이션)
@@ -118,6 +109,11 @@ const AutoMailTemplatePage = () => {
   }, [language]);
 
   useEffect(() => {
+    const activeLang = languageTab === 0 ? 'ko' : languageTab === 1 ? 'en' : 'vi';
+    setIsEditorReady((prev) => (prev[activeLang] ? { ...prev, [activeLang]: false } : prev));
+  }, [languageTab]);
+
+  useEffect(() => {
     const templateIdChanged = prevTemplateIdRef.current !== templateId;
     const groupIdChanged = prevGroupIdRef.current !== groupId;
 
@@ -132,7 +128,6 @@ const AutoMailTemplatePage = () => {
     const savedTemplate = getTemplate(groupId, templateId || '');
     if (savedTemplate) {
       setTitle(savedTemplate.title);
-      setInitialContent(savedTemplate.content);
       setContent(savedTemplate.content);
     } else {
       const defaultTitle = template?.title
@@ -149,46 +144,10 @@ const AutoMailTemplatePage = () => {
               vi: defaultTitle,
             }
       );
-      const defaultContent = {
-        ko: '<p>템플릿 내용을 입력하세요.</p>',
-        en: '<p>Please enter template content.</p>',
-        vi: '<p>Vui lòng nhập nội dung mẫu.</p>',
-      };
-      setInitialContent(defaultContent);
-      setContent(defaultContent);
+      setContent(DEFAULT_CONTENT);
     }
     setIsInitialized(true);
   }, [template, groupId, templateId, isInitialized, language]);
-
-  useEffect(() => {
-    if (editorRefs.current.ko && isEditorReady.ko && initialContent.ko) {
-      const currentContent = editorRefs.current.ko.getContent();
-      if (currentContent !== initialContent.ko) {
-        editorRefs.current.ko.setContent(initialContent.ko);
-        setContent((prev) => ({ ...prev, ko: initialContent.ko }));
-      }
-    }
-  }, [initialContent.ko, isEditorReady.ko]);
-
-  useEffect(() => {
-    if (editorRefs.current.en && isEditorReady.en && initialContent.en) {
-      const currentContent = editorRefs.current.en.getContent();
-      if (currentContent !== initialContent.en) {
-        editorRefs.current.en.setContent(initialContent.en);
-        setContent((prev) => ({ ...prev, en: initialContent.en }));
-      }
-    }
-  }, [initialContent.en, isEditorReady.en]);
-
-  useEffect(() => {
-    if (editorRefs.current.vi && isEditorReady.vi && initialContent.vi) {
-      const currentContent = editorRefs.current.vi.getContent();
-      if (currentContent !== initialContent.vi) {
-        editorRefs.current.vi.setContent(initialContent.vi);
-        setContent((prev) => ({ ...prev, vi: initialContent.vi }));
-      }
-    }
-  }, [initialContent.vi, isEditorReady.vi]);
 
   const validateMultilingualTitle = (title: MultilingualContent): boolean => {
     if (!title || typeof title !== 'object') return false;
@@ -200,18 +159,17 @@ const AutoMailTemplatePage = () => {
 
   const getAllContent = (): MultilingualContent => {
     return {
-      ko: editorRefs.current.ko?.getContent() || content.ko,
-      en: editorRefs.current.en?.getContent() || content.en,
-      vi: editorRefs.current.vi?.getContent() || content.vi,
+      ko: content.ko,
+      en: content.en,
+      vi: content.vi,
     };
   };
 
   const getAllContentText = (): MultilingualContent => {
-    const fullContent = getAllContent();
     return {
-      ko: editorRefs.current.ko?.getContent({ format: 'text' }) || fullContent.ko.replace(/<[^>]*>/g, '').trim(),
-      en: editorRefs.current.en?.getContent({ format: 'text' }) || fullContent.en.replace(/<[^>]*>/g, '').trim(),
-      vi: editorRefs.current.vi?.getContent({ format: 'text' }) || fullContent.vi.replace(/<[^>]*>/g, '').trim(),
+      ko: (content.ko || '').replace(/<[^>]*>/g, '').trim(),
+      en: (content.en || '').replace(/<[^>]*>/g, '').trim(),
+      vi: (content.vi || '').replace(/<[^>]*>/g, '').trim(),
     };
   };
 
@@ -289,66 +247,62 @@ const AutoMailTemplatePage = () => {
     },
   };
 
-  const renderEditor = (lang: 'ko' | 'en' | 'vi', index: number) => (
-    <CustomTabPanel value={languageTab} index={index}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-          제목
-        </Typography>
-        <TextField
-          fullWidth
-          value={title[lang]}
-          onChange={(e) => setTitle((prev) => ({ ...prev, [lang]: e.target.value }))}
-          placeholder={`이메일 제목을 입력하세요 (${lang})`}
-          variant="outlined"
-        />
-      </Box>
+  const renderEditor = (lang: 'ko' | 'en' | 'vi', index: number) => {
+    const isActive = languageTab === index;
 
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-          본문
-        </Typography>
-        <Box sx={{ position: 'relative', minHeight: 500 }}>
-          {!isEditorReady[lang] && languageTab === index && (
-            <Box
-              sx={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: 'background.paper', zIndex: 1,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          )}
-          <Box sx={{ display: languageTab === index ? (isEditorReady[lang] ? 'block' : 'none') : 'none' }}>
-            <Editor
-              key={`editor-${lang}`}
-              apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
-              onInit={(_evt, editor) => {
-                editorRefs.current[lang] = editor;
-                setIsEditorReady((prev) => ({ ...prev, [lang]: true }));
-                if (initialContent[lang]) {
-                  editor.setContent(initialContent[lang]);
-                  setContent((prev) => ({ ...prev, [lang]: initialContent[lang] }));
-                } else {
-                  const currentContent = editor.getContent();
-                  setContent((prev) => ({ ...prev, [lang]: currentContent }));
-                }
-              }}
-              onEditorChange={(_content) => {
-                setContent((prev) => ({ ...prev, [lang]: _content }));
-              }}
-              initialValue={initialContent[lang]}
-              init={{
-                ...editorConfig,
-                language: lang === 'ko' ? 'ko_KR' : lang,
-              }}
-            />
+    return (
+      <CustomTabPanel value={languageTab} index={index}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            제목
+          </Typography>
+          <TextField
+            fullWidth
+            value={title[lang]}
+            onChange={(e) => setTitle((prev) => ({ ...prev, [lang]: e.target.value }))}
+            placeholder={`이메일 제목을 입력하세요 (${lang})`}
+            variant="outlined"
+          />
+        </Box>
+
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            본문
+          </Typography>
+          <Box sx={{ position: 'relative', minHeight: 500 }}>
+            {isActive && !isEditorReady[lang] && (
+              <Box
+                sx={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'background.paper', zIndex: 1,
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            {isActive && (
+              <Editor
+                key={`editor-${lang}`}
+                apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
+                value={content[lang]}
+                onInit={(_evt, editor) => {
+                  setIsEditorReady((prev) => ({ ...prev, [lang]: true }));
+                }}
+                onEditorChange={(updatedContent) => {
+                  setContent((prev) => ({ ...prev, [lang]: updatedContent }));
+                }}
+                init={{
+                  ...editorConfig,
+                  language: lang === 'ko' ? 'ko-KR' : lang,
+                }}
+              />
+            )}
           </Box>
         </Box>
-      </Box>
-    </CustomTabPanel>
-  );
+      </CustomTabPanel>
+    );
+  };
 
   return (
     <Box>
