@@ -284,7 +284,7 @@ const AutoMailTemplatePage = () => {
             {isActive && (
               <Editor
                 key={`editor-${lang}`}
-                apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
+                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                 value={content[lang]}
                 onInit={(_evt, editor) => {
                   setIsEditorReady((prev) => ({ ...prev, [lang]: true }));

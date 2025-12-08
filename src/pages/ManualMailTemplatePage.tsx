@@ -720,7 +720,7 @@ const ManualMailTemplatePage = () => {
             {isActive && (
               <Editor
                 key={`editor-${nationality}`}
-                apiKey='txjxp10zi9jdxkgkn3vgnphatuze7hgqih2bmlatoix5fdvb'
+                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                 value={content[nationality]}
                 onInit={(_evt, editor) => {
                   editorRefs.current[nationality as 'KR' | 'US' | 'VN'] = editor;
